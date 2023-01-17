@@ -121,3 +121,4 @@ mmseg/.mim
 
 #OutPut
 tools/output/
+pth/
