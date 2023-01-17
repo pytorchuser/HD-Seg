@@ -19,19 +19,26 @@ from mmseg.datasets import build_dataloader, build_dataset
 from mmseg.models import build_segmentor
 from mmseg.utils import build_ddp, build_dp, get_device, setup_multi_processes
 
+CONFIG = '../configs/swin/my_upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K.py'
+CHECKPOINT = '../tools/output/train/oct_T_2_3lr_h_20k_largedataset800/latest.pth'
+WORK_DIR = 'output/train/oct_T_2_3lr_h_20k_largedataset800'
+OUT = 'output/test/oct_T_2_3lr_h_20k_largedataset800/results.pkl'
+EVAL = 'mIoU'
+SHOW_DIR = 'output/test/oct_T_2_3lr_h_20k_largedataset800'
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
         description='mmseg test (and eval) a model')
-    parser.add_argument('config', help='test config file path')
-    parser.add_argument('checkpoint', help='checkpoint file')
+    parser.add_argument('--config', default=CONFIG, help='test config file path')
+    parser.add_argument('--checkpoint', default=CHECKPOINT, help='checkpoint file')
     parser.add_argument(
-        '--work-dir',
+        '--work-dir', default=WORK_DIR,
         help=('if specified, the evaluation metric results will be dumped'
               'into the directory as json'))
     parser.add_argument(
         '--aug-test', action='store_true', help='Use Flip and Multi scale aug')
-    parser.add_argument('--out', help='output result file in pickle format')
+    parser.add_argument('--out', default=OUT, help='output result file in pickle format')
     parser.add_argument(
         '--format-only',
         action='store_true',
@@ -39,14 +46,14 @@ def parse_args():
         'useful when you want to format the result to a specific format and '
         'submit it to the test server')
     parser.add_argument(
-        '--eval',
+        '--eval', default=EVAL,
         type=str,
         nargs='+',
         help='evaluation metrics, which depends on the dataset, e.g., "mIoU"'
         ' for generic datasets, and "cityscapes" for Cityscapes')
     parser.add_argument('--show', action='store_true', help='show results')
     parser.add_argument(
-        '--show-dir', help='directory where painted images will be saved')
+        '--show-dir', default=SHOW_DIR, help='directory where painted images will be saved')
     parser.add_argument(
         '--gpu-collect',
         action='store_true',

@@ -10,6 +10,10 @@ import mmcv
 
 STARE_LEN = 20
 TRAINING_LEN = 10
+IMAGE_PATH = '../../data/STARE/stare-images.tar'
+LABELS_AH = '../../data/STARE/labels-ah.tar'
+LABELS_VK = '../../data/STARE/labels-vk.tar'
+OUT_DIR = '../../data/STARE/new'
 
 
 def un_gz(src, dst):
@@ -22,11 +26,11 @@ def un_gz(src, dst):
 def parse_args():
     parser = argparse.ArgumentParser(
         description='Convert STARE dataset to mmsegmentation format')
-    parser.add_argument('image_path', help='the path of stare-images.tar')
-    parser.add_argument('labels_ah', help='the path of labels-ah.tar')
-    parser.add_argument('labels_vk', help='the path of labels-vk.tar')
+    parser.add_argument('--image_path', default=IMAGE_PATH, help='the path of stare-images.tar')
+    parser.add_argument('--labels_ah',  default=LABELS_AH, help='the path of labels-ah.tar')
+    parser.add_argument('--labels_vk',  default=LABELS_VK, help='the path of labels-vk.tar')
     parser.add_argument('--tmp_dir', help='path of the temporary directory')
-    parser.add_argument('-o', '--out_dir', help='output path')
+    parser.add_argument('-o', '--out_dir', default=OUT_DIR, help='output path')
     args = parser.parse_args()
     return args
 
