@@ -12,6 +12,7 @@ from .drive import DRIVEDataset
 from .face import FaceOccludedDataset
 from .hrf import HRFDataset
 from .oct import OCTDataset
+from .oct_duke2015 import OCTDuke2015Dataset
 from .imagenets import (ImageNetSDataset, LoadImageNetSAnnotations,
                         LoadImageNetSImageFromFile)
 from .isaid import iSAIDDataset
@@ -28,8 +29,8 @@ __all__ = [
     'DATASETS', 'build_dataset', 'PIPELINES', 'CityscapesDataset',
     'PascalVOCDataset', 'ADE20KDataset', 'PascalContextDataset',
     'PascalContextDataset59', 'ChaseDB1Dataset', 'DRIVEDataset', 'HRFDataset',
-    'OCTDataset', 'STAREDataset', 'DarkZurichDataset', 'NightDrivingDataset',
-    'COCOStuffDataset', 'LoveDADataset', 'MultiImageMixDataset',
+    'OCTDataset', 'OCTDuke2015Dataset', 'STAREDataset', 'DarkZurichDataset',
+    'NightDrivingDataset', 'COCOStuffDataset', 'LoveDADataset', 'MultiImageMixDataset',
     'iSAIDDataset', 'ISPRSDataset', 'PotsdamDataset', 'FaceOccludedDataset',
     'ImageNetSDataset', 'LoadImageNetSAnnotations',
     'LoadImageNetSImageFromFile'
