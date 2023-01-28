@@ -53,6 +53,7 @@ def get_valid_img_seg(mat, layerName, fluidName):
     img = np.array(mat['images'], dtype=np.uint8)
     valid_idx = get_valid_idx(manualLayer)
 
+    img = img[:, :, valid_idx]
     manualFluid = manualFluid[:, :, valid_idx]
     manualLayer = manualLayer[:, :, valid_idx]
 
