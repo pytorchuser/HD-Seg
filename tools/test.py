@@ -7,11 +7,13 @@ from mmengine.config import Config, DictAction
 from mmengine.runner import Runner
 
 
+FILENAME = 'oct_T_2_3lr_h_20k_octduke2013normal_800'
+
 CONFIG = '../configs/swin/my_upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K.py'
-CHECKPOINT = '../tools/output/train/oct_T_2_3lr_h_20k_largedataset800/latest.pth'
-WORK_DIR = 'output/train/oct_T_2_3lr_h_20k_largedataset800'
-OUT = 'output/test/oct_T_2_3lr_h_20k_largedataset800/results.pkl'
-SHOW_DIR = 'output/test/oct_T_2_3lr_h_20k_largedataset800'
+CHECKPOINT = '../tools/output/train/' + FILENAME + '/latest.pth'
+WORK_DIR = 'output/train/' + FILENAME
+OUT = 'output/test/' + FILENAME + '/results.pkl'
+SHOW_DIR = 'output/test/' + FILENAME
 
 
 # TODO: support fuse_conv_bn, visualization, and format_only
