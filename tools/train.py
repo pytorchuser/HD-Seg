@@ -6,6 +6,8 @@ import os.path as osp
 import time
 import warnings
 
+import torch, gc
+
 import mmcv
 import torch
 import torch.distributed as dist
@@ -21,7 +23,7 @@ from mmseg.utils import (collect_env, get_device, get_root_logger,
                          setup_multi_processes)
 
 CONFIG = '../configs/swin/my_upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K.py'
-WORK_DIR = 'output/train/oct_T_2_3lr_h_20k_octduke2015_800'
+WORK_DIR = 'output/train/oct_T_2_3lr_h_20k_octduke2013normal_800'
 LOAD_FROM = '../pth/upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210531_112542' \
             '-e380ad3e.pth '
 
@@ -114,6 +116,9 @@ def parse_args():
 
 
 def main():
+    gc.collect()
+    torch.cuda.empty_cache()
+
     args = parse_args()
 
     cfg = Config.fromfile(args.config)

@@ -20,11 +20,11 @@ from mmseg.models import build_segmentor
 from mmseg.utils import build_ddp, build_dp, get_device, setup_multi_processes
 
 CONFIG = '../configs/swin/my_upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K.py'
-CHECKPOINT = '../tools/output/train/oct_T_2_3lr_h_20k_largedataset800/latest.pth'
-WORK_DIR = 'output/train/oct_T_2_3lr_h_20k_largedataset800'
-OUT = 'output/test/oct_T_2_3lr_h_20k_largedataset800/results.pkl'
+CHECKPOINT = '../tools/output/train/oct_T_2_3lr_h_20k_octduke2013normal_800/latest.pth'
+WORK_DIR = 'output/train/oct_T_2_3lr_h_20k_octduke2013normal_800'
+OUT = 'output/test/oct_T_2_3lr_h_20k_octduke2013normal_800/results.pkl'
 EVAL = 'mIoU'
-SHOW_DIR = 'output/test/oct_T_2_3lr_h_20k_largedataset800'
+SHOW_DIR = 'output/test/oct_T_2_3lr_h_20k_octduke2013normal_800'
 
 
 def parse_args():
