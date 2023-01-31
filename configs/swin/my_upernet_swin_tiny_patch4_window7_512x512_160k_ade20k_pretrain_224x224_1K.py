@@ -1,6 +1,6 @@
 _base_ = [
     '../_base_/models/upernet_swin.py', '../_base_/datasets/oct_duke2013.py',
-    '../_base_/default_runtime.py', '../_base_/schedules/schedule_80k.py'
+    '../_base_/default_runtime.py', '../_base_/schedules/schedule_800.py'
 ]
 # checkpoint_file = 'https://download.openmmlab.com/mmsegmentation/v0.5/pretrain/swin/swin_tiny_patch4_window7_224_20220317-1cdeb081.pth'  # noqa
 NUM_CLASSES = 4
@@ -44,7 +44,10 @@ lr_config = dict(
     by_epoch=False)
 
 # By default, models are trained on 8 GPUs with 2 images per GPU
-data = dict(samples_per_gpu=2)
+# CUDA out of memory。 加载验证数据集时内存会爆掉， workers_per_gpu设置的小一些可避免这个问题
+data = dict(samples_per_gpu=2,
+            val_dataloader=dict(samples_per_gpu=1, workers_per_gpu=2, shuffle=False),
+            test_dataloader=dict(samples_per_gpu=1, workers_per_gpu=2, shuffle=False))
 
 # 2 个 epoch 训练，1 个 epoch 验证将交替运行。
 # workflow = [('train', 2)]
