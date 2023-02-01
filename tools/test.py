@@ -19,7 +19,7 @@ from mmseg.datasets import build_dataloader, build_dataset
 from mmseg.models import build_segmentor
 from mmseg.utils import build_ddp, build_dp, get_device, setup_multi_processes
 
-FILENAME = 'oct_T_2_3lr_h_20k_octduke2013normal_800'
+FILENAME = 'oct_T_2_3lr_h_octduke2015_800_epoch'
 
 CONFIG = '../configs/swin/my_upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K.py'
 CHECKPOINT = '../tools/output/train/' + FILENAME + '/latest.pth'
