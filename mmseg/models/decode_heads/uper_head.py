@@ -76,12 +76,15 @@ class UPerHead(BaseDecodeHead):
 
     def psp_forward(self, inputs):
         """Forward function of PSP module."""
+        # -1, x 就是 inputs 的最后的特征
         x = inputs[-1]
-        psp_outs = [x]
-        psp_outs.extend(self.psp_modules(x))
+        # 原图 x 及其 进行psp的特征都放入 列表中进行保存
+        psp_outs = [x]  # 原图 x
+        psp_outs.extend(self.psp_modules(x))  # 返回的4个pmp block的输出
+        # 把他们拼在一起后: psp_outs: [2, 2816, 16, 16]
         psp_outs = torch.cat(psp_outs, dim=1)
+        # 拼完后的结构再进行一次 3*3的卷积，把输出的channel从2816给降维到512，返回结果到UPerHead的 forward中
         output = self.bottleneck(psp_outs)
-
         return output
 
     def _forward_feature(self, inputs):
@@ -95,41 +98,52 @@ class UPerHead(BaseDecodeHead):
             feats (Tensor): A tensor of shape (batch_size, self.channels,
                 H, W) which is feature map for last layer of decoder head.
         """
+        # inputs 是一个list ， 即前面4个stage得到的结果, 每个特征channels不同， 即特征维度不同
         inputs = self._transform_inputs(inputs)
 
-        # build laterals
+        # build laterals 对inputs进行卷积，让特征图有一个一致的维度
         laterals = [
             lateral_conv(inputs[i])
             for i, lateral_conv in enumerate(self.lateral_convs)
         ]
 
+        # 深层的特征单独拿出来进行psp forward，在psp forward中，取了input的最后一层
         laterals.append(self.psp_forward(inputs))
 
         # build top-down path
         used_backbone_levels = len(laterals)
+
+        # 把深层特征进行psp forward后(16, 16)再进行上采样，与前面stage输出的浅层特征进行残差连接（加和）（32，32）
         for i in range(used_backbone_levels - 1, 0, -1):
-            prev_shape = laterals[i - 1].shape[2:]
+            prev_shape = laterals[i - 1].shape[2:] #浅层stage输出的尺寸:[32,32]
+            # laterals[i - 1]即前面stage输出的浅层特征， resize对特征进行上采样
             laterals[i - 1] = laterals[i - 1] + resize(
                 laterals[i],
                 size=prev_shape,
                 mode='bilinear',
                 align_corners=self.align_corners)
 
+        # 这里的遍历是[32] [64] [128]的3个残差连接后的特征图再各自走了一个卷积
         # build outputs
         fpn_outs = [
             self.fpn_convs[i](laterals[i])
             for i in range(used_backbone_levels - 1)
         ]
+
+        # 把psp那个[16,16]的特征图也加进来成为4个特征图
         # append psp feature
         fpn_outs.append(laterals[-1])
 
+        # 把4个特征图的尺寸通过上采样进行统一，为 128
         for i in range(used_backbone_levels - 1, 0, -1):
             fpn_outs[i] = resize(
                 fpn_outs[i],
                 size=fpn_outs[0].shape[2:],
                 mode='bilinear',
                 align_corners=self.align_corners)
+        # 把各个stage的特征进行fuse， fpn_outs [2,2816,128,128]
         fpn_outs = torch.cat(fpn_outs, dim=1)
+        # 融合后再进行一次卷积,把2816降维成512,output:[2,512,128,128]
         feats = self.fpn_bottleneck(fpn_outs)
         return feats
 
