@@ -241,6 +241,7 @@ class BaseDecodeHead(BaseModule, metaclass=ABCMeta):
         """Classify each pixel."""
         if self.dropout is not None:
             feat = self.dropout(feat)
+        # 输出层，从512 输出n个 channels,即n个类别， 即当前点属于n类中的哪一个类
         output = self.conv_seg(feat)
         return output
 
