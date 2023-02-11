@@ -76,6 +76,7 @@ def train_segmentor(model,
                     timestamp=None,
                     meta=None):
     """Launch segmentor training."""
+    # 获取日志记录器，根据配置文件中设置的日志等级
     logger = get_root_logger(cfg.log_level)
 
     # prepare data loaders
@@ -117,7 +118,7 @@ def train_segmentor(model,
                 'Please use MMCV >= 1.4.4 for CPU training!'
         model = build_dp(model, cfg.device, device_ids=cfg.gpu_ids)
 
-    # build runner
+    # 创建优化器
     optimizer = build_optimizer(model, cfg.optimizer)
 
     if cfg.get('runner') is None:
@@ -125,7 +126,7 @@ def train_segmentor(model,
         warnings.warn(
             'config is now expected to have a `runner` section, '
             'please set `runner` in your config.', UserWarning)
-
+    # build runner
     runner = build_runner(
         cfg.runner,
         default_args=dict(
@@ -148,10 +149,12 @@ def train_segmentor(model,
             runner.register_hook(DistSamplerSeedHook())
 
     # an ugly walkaround to make the .log and .log.json filenames the same
+    # 设置时间戳
     runner.timestamp = timestamp
 
     # register eval hooks
     if validate:
+        # 创建验证数据集
         val_dataset = build_dataset(cfg.data.val, dict(test_mode=True))
         # The specific dataloader settings
         val_loader_cfg = {
@@ -160,6 +163,7 @@ def train_segmentor(model,
             'shuffle': False,  # Not shuffle by default
             **cfg.data.get('val_dataloader', {}),
         }
+        # 创建验证数据集下载器
         val_dataloader = build_dataloader(val_dataset, **val_loader_cfg)
         eval_cfg = cfg.get('evaluation', {})
         eval_cfg['by_epoch'] = cfg.runner['type'] != 'IterBasedRunner'
@@ -182,7 +186,7 @@ def train_segmentor(model,
             priority = hook_cfg.pop('priority', 'NORMAL')
             hook = build_from_cfg(hook_cfg, HOOKS)
             runner.register_hook(hook, priority=priority)
-
+    # 设置runner是否重新开始和下载检查点
     if cfg.resume_from is None and cfg.get('auto_resume'):
         resume_from = find_latest_checkpoint(cfg.work_dir)
         if resume_from is not None:
@@ -191,4 +195,5 @@ def train_segmentor(model,
         runner.resume(cfg.resume_from)
     elif cfg.load_from:
         runner.load_checkpoint(cfg.load_from)
+    # 启动runner
     runner.run(data_loaders, cfg.workflow)

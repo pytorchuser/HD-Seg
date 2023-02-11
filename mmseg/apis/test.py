@@ -78,6 +78,7 @@ def single_gpu_test(model,
     model.eval()
     results = []
     dataset = data_loader.dataset
+    # 根据数据集总长度，生成任务进度条
     prog_bar = mmcv.ProgressBar(len(dataset))
     # The pipeline about how the data_loader retrieval samples from dataset:
     # sampler -> batch_sampler -> indices
@@ -86,28 +87,37 @@ def single_gpu_test(model,
     # we use batch_sampler to get correct data idx
     loader_indices = data_loader.batch_sampler
 
+    # 同时遍历loader_indices和data_loader，取出data_loader中对应的batch_sampler和data
     for batch_indices, data in zip(loader_indices, data_loader):
         with torch.no_grad():
+            # 使用分割器处理数据，得到result
             result = model(return_loss=False, **data)
 
+        # 如果需要显示show==true或者存在out_dir输出目录
         if show or out_dir:
+            # 读取数据中tensor数据和对应参数metas，转换成img
             img_tensor = data['img'][0]
             img_metas = data['img_metas'][0].data[0]
             imgs = tensor2imgs(img_tensor, **img_metas[0]['img_norm_cfg'])
-            assert len(imgs) == len(img_metas)
+            assert len(imgs) == len(img_metas)  # 确保数组长度一致
 
+            # 联合遍历图片和图片参数，并显示或存储
             for img, img_meta in zip(imgs, img_metas):
+                # 根据图片长宽，获取图片数据
                 h, w, _ = img_meta['img_shape']
                 img_show = img[:h, :w, :]
 
+                # 根据图片原始长宽，改变img_show尺寸
                 ori_h, ori_w = img_meta['ori_shape'][:-1]
                 img_show = mmcv.imresize(img_show, (ori_w, ori_h))
 
+                # 如果输出目录存在，拼接输出文件路径：输出目录+原始文件名
                 if out_dir:
                     out_file = osp.join(out_dir, img_meta['ori_filename'])
                 else:
                     out_file = None
 
+                # 调用分割器的绘制方法，绘制图片
                 model.module.show_result(
                     img_show,
                     result,
@@ -116,12 +126,14 @@ def single_gpu_test(model,
                     out_file=out_file,
                     opacity=opacity)
 
+        # 将结果保存为本地numpy文件，在计算期间节省CPU内存
         if efficient_test:
             result = [np2tmp(_, tmpdir='.efficient_test') for _ in result]
-
+        # 仅格式化结果（具体格式化过程在各个数据集中实现）
         if format_only:
             result = dataset.format_results(
                 result, indices=batch_indices, **format_args)
+        # 生成度量评估的预结果（具体生成方式在各个数据集中实现）
         if pre_eval:
             # TODO: adapt samples_per_gpu > 1.
             # only samples_per_gpu=1 valid now
@@ -129,7 +141,7 @@ def single_gpu_test(model,
             results.extend(result)
         else:
             results.extend(result)
-
+        # 获取本次结果长度，更新进度条
         batch_size = len(result)
         for _ in range(batch_size):
             prog_bar.update()

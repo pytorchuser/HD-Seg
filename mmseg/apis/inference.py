@@ -22,6 +22,7 @@ def init_segmentor(config, checkpoint=None, device='cuda:0'):
     Returns:
         nn.Module: The constructed segmentor.
     """
+    # 校验配置文件类型
     if isinstance(config, str):
         config = mmcv.Config.fromfile(config)
     elif not isinstance(config, mmcv.Config):
@@ -29,7 +30,9 @@ def init_segmentor(config, checkpoint=None, device='cuda:0'):
                         'but got {}'.format(type(config)))
     config.model.pretrained = None
     config.model.train_cfg = None
+    # 创建分割器
     model = build_segmentor(config.model, test_cfg=config.get('test_cfg'))
+    # 下载检查点，并根据检查点配置分割器参数
     if checkpoint is not None:
         checkpoint = load_checkpoint(model, checkpoint, map_location='cpu')
         model.CLASSES = checkpoint['meta']['CLASSES']
@@ -90,6 +93,7 @@ def inference_segmentor(model, imgs):
         img_data = dict(img=img)
         img_data = test_pipeline(img_data)
         data.append(img_data)
+    # 将数据处理成pytorch的dataloader需要的格式
     data = collate(data, samples_per_gpu=len(imgs))
     if next(model.parameters()).is_cuda:
         # scatter to specified GPU
@@ -134,6 +138,7 @@ def show_result_pyplot(model,
     """
     if hasattr(model, 'module'):
         model = model.module
+    # 生成图片
     img = model.show_result(
         img, result, palette=palette, show=False, opacity=opacity)
     plt.figure(figsize=fig_size)
@@ -141,5 +146,6 @@ def show_result_pyplot(model,
     plt.title(title)
     plt.tight_layout()
     plt.show(block=block)
+    # 写入指定文件夹
     if out_file is not None:
         mmcv.imwrite(img, out_file)
