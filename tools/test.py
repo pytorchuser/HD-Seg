@@ -125,6 +125,7 @@ def parse_args():
 
 
 def main():
+    # 初始化参数
     args = parse_args()
     assert args.out or args.eval or args.format_only or args.show \
            or args.show_dir, \
@@ -137,7 +138,7 @@ def main():
 
     if args.out is not None and not args.out.endswith(('.pkl', '.pickle')):
         raise ValueError('The output file must be a pkl file.')
-
+    # 读取配置文件
     cfg = mmcv.Config.fromfile(args.config)
     if args.cfg_options is not None:
         cfg.merge_from_dict(args.cfg_options)
@@ -177,6 +178,7 @@ def main():
     # allows not to create
     if args.work_dir is not None and rank == 0:
         mmcv.mkdir_or_exist(osp.abspath(args.work_dir))
+        # 时间戳
         timestamp = time.strftime('%Y%m%d_%H%M%S', time.localtime())
         if args.aug_test:
             json_file = osp.join(args.work_dir,
@@ -228,7 +230,9 @@ def main():
     fp16_cfg = cfg.get('fp16', None)
     if fp16_cfg is not None:
         wrap_fp16_model(model)
+    # 下载检查点
     checkpoint = load_checkpoint(model, args.checkpoint, map_location='cpu')
+    # 根据检查点配置分割器的CLASSES和PALETTE参数
     if 'CLASSES' in checkpoint.get('meta', {}):
         model.CLASSES = checkpoint['meta']['CLASSES']
     else:
@@ -251,7 +255,7 @@ def main():
             '``efficient_test=True`` does not have effect in tools/test.py, '
             'the evaluation and format results are CPU memory efficient by '
             'default')
-
+    # 对cityscapes的特殊处理
     eval_on_format_results = (
             args.eval is not None and 'cityscapes' in args.eval)
     if eval_on_format_results:
@@ -267,7 +271,7 @@ def main():
         mmcv.mkdir_or_exist(tmpdir)
     else:
         tmpdir = None
-
+    # 获取驱动
     cfg.device = get_device()
     if not distributed:
         warnings.warn(
@@ -277,6 +281,7 @@ def main():
         if not torch.cuda.is_available():
             assert digit_version(mmcv.__version__) >= digit_version('1.4.4'), \
                 'Please use MMCV >= 1.4.4 for CPU training!'
+        # 非分布式
         model = revert_sync_batchnorm(model)
         model = build_dp(model, cfg.device, device_ids=cfg.gpu_ids)
         results = single_gpu_test(
@@ -304,7 +309,7 @@ def main():
             pre_eval=args.eval is not None and not eval_on_format_results,
             format_only=args.format_only or eval_on_format_results,
             format_args=eval_kwargs)
-
+    # ？获取当前进程的排序，单gpu默认rank为0
     rank, _ = get_dist_info()
     if rank == 0:
         if args.out:
@@ -317,6 +322,7 @@ def main():
             mmcv.dump(results, args.out)
         if args.eval:
             eval_kwargs.update(metric=args.eval)
+            # 评估结果并写入json文件
             metric = dataset.evaluate(results, **eval_kwargs)
             metric_dict = dict(config=args.config, metric=metric)
             mmcv.dump(metric_dict, json_file, indent=4)

@@ -115,11 +115,12 @@ def parse_args():
 
 
 def main():
+    # 清除内存垃圾，清空gpu缓存
     gc.collect()
     torch.cuda.empty_cache()
-
+    # 获取配置参数
     args = parse_args()
-
+    # 读取配置文件
     cfg = Config.fromfile(args.config)
     if args.cfg_options is not None:
         cfg.merge_from_dict(args.cfg_options)
@@ -203,7 +204,7 @@ def main():
     cfg.seed = seed
     meta['seed'] = seed
     meta['exp_name'] = osp.basename(args.config)
-
+    # 创建分割器
     model = build_segmentor(
         cfg.model,
         train_cfg=cfg.get('train_cfg'),
@@ -219,8 +220,9 @@ def main():
         model = revert_sync_batchnorm(model)
 
     logger.info(model)
-
+    # 创建训练数据集
     datasets = [build_dataset(cfg.data.train)]
+    # 如果工作流数组长度为2，将验证数据集添加在训练数据集后
     if len(cfg.workflow) == 2:
         val_dataset = copy.deepcopy(cfg.data.val)
         val_dataset.pipeline = cfg.data.train.pipeline
@@ -237,6 +239,7 @@ def main():
     model.CLASSES = datasets[0].CLASSES
     # passing checkpoint meta for saving best checkpoint
     meta.update(cfg.checkpoint_config.meta)
+    # 开始训练
     train_segmentor(
         model,
         datasets,
