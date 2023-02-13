@@ -53,6 +53,11 @@ class BaseDecodeHead(BaseModule, metaclass=ABCMeta):
         align_corners (bool): align_corners argument of F.interpolate.
             Default: False.
         init_cfg (dict or list[dict], optional): Initialization config dict.
+        msc_module_cfg（modified skip connection module）：放置在跳跃连接部位的类似于ppm模块的优化模型。
+            e.g. msc_module_cfg=None 不放置
+            msc_module_cfg=[dict(type='MSC', layer_idx=2), dict(type='PPM', layer_idx=3)]
+            对第4层进行PPM处理，对第3层进行MSC处理（未实现），不写的层使用默认处理
+            注意：layer_idx需按顺序填写(从小到大)
     """
 
     def __init__(self,
@@ -76,7 +81,8 @@ class BaseDecodeHead(BaseModule, metaclass=ABCMeta):
                  sampler=None,
                  align_corners=False,
                  init_cfg=dict(
-                     type='Normal', std=0.01, override=dict(name='conv_seg'))):
+                     type='Normal', std=0.01, override=dict(name='conv_seg')),
+                 msc_module_cfg=None):
         super(BaseDecodeHead, self).__init__(init_cfg)
         self._init_inputs(in_channels, in_index, input_transform)
         self.channels = channels
@@ -85,6 +91,13 @@ class BaseDecodeHead(BaseModule, metaclass=ABCMeta):
         self.norm_cfg = norm_cfg
         self.act_cfg = act_cfg
         self.in_index = in_index
+        self.msc_module_cfg = msc_module_cfg
+
+        # TODO 不确定配置文件里面的数据结构是否需要处理，先预留位置
+        # if msc_module_cfg is None:
+        #     self.msc_module_cfg = msc_module_cfg
+        # elif len(msc_module_cfg) > 0:
+        #     self.msc_module_cfg = msc_module_cfg
 
         self.ignore_index = ignore_index
         self.align_corners = align_corners
