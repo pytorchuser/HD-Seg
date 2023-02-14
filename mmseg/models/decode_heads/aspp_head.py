@@ -29,6 +29,9 @@ class ASPPModule(nn.ModuleList):
         self.conv_cfg = conv_cfg
         self.norm_cfg = norm_cfg
         self.act_cfg = act_cfg
+        # 循环扩张率数组，生成一个卷积list
+        # 其中dilation==1时，生成1*1卷积层，其余全为3*3卷积层
+        # 其中dilation==1时，padding为0，其余与dilation相同。
         for dilation in dilations:
             self.append(
                 ConvModule(
@@ -66,6 +69,7 @@ class ASPPHead(BaseDecodeHead):
         super(ASPPHead, self).__init__(**kwargs)
         assert isinstance(dilations, (list, tuple))
         self.dilations = dilations
+        # 初始化image pooling 1*1卷积
         self.image_pool = nn.Sequential(
             nn.AdaptiveAvgPool2d(1),
             ConvModule(
@@ -75,6 +79,7 @@ class ASPPHead(BaseDecodeHead):
                 conv_cfg=self.conv_cfg,
                 norm_cfg=self.norm_cfg,
                 act_cfg=self.act_cfg))
+        # 初始化Atrous Spatial Pyramid pooling
         self.aspp_modules = ASPPModule(
             dilations,
             self.in_channels,
@@ -82,6 +87,7 @@ class ASPPHead(BaseDecodeHead):
             conv_cfg=self.conv_cfg,
             norm_cfg=self.norm_cfg,
             act_cfg=self.act_cfg)
+        # 初始化bottleneck 3*3卷积，inChannel=扩张卷积层数量+1 * channels
         self.bottleneck = ConvModule(
             (len(dilations) + 1) * self.channels,
             self.channels,
@@ -103,6 +109,7 @@ class ASPPHead(BaseDecodeHead):
                 H, W) which is feature map for last layer of decoder head.
         """
         x = self._transform_inputs(inputs)
+        # inputs先和image pooling做卷积，并双线性插值，使输出尺寸与inputs一致
         aspp_outs = [
             resize(
                 self.image_pool(x),
@@ -110,8 +117,11 @@ class ASPPHead(BaseDecodeHead):
                 mode='bilinear',
                 align_corners=self.align_corners)
         ]
+        # inputs再和aspp做卷积
         aspp_outs.extend(self.aspp_modules(x))
+        # 以上结果压缩成深度为1的一张图
         aspp_outs = torch.cat(aspp_outs, dim=1)
+        # 再做一次3*3卷积
         feats = self.bottleneck(aspp_outs)
         return feats
 
