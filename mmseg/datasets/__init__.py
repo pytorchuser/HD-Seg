@@ -6,16 +6,15 @@ from .cityscapes import CityscapesDataset
 from .coco_stuff import COCOStuffDataset
 from .custom import CustomDataset
 from .dark_zurich import DarkZurichDataset
-from .dataset_wrappers import (ConcatDataset, MultiImageMixDataset,
-                               RepeatDataset)
+from .dataset_wrappers import (ConcatDataset, MultiImageMixDataset, RepeatDataset)
 from .drive import DRIVEDataset
 from .face import FaceOccludedDataset
 from .hrf import HRFDataset
 from .oct import OCTDataset
 from .oct_duke2015 import OCTDuke2015Dataset
 from .oct_duke2013 import OCTDuke2013Dataset
-from .imagenets import (ImageNetSDataset, LoadImageNetSAnnotations,
-                        LoadImageNetSImageFromFile)
+from .oct_hcms2018 import OCTHCMS2018Dataset
+from .imagenets import (ImageNetSDataset, LoadImageNetSAnnotations, LoadImageNetSImageFromFile)
 from .isaid import iSAIDDataset
 from .isprs import ISPRSDataset
 from .loveda import LoveDADataset
@@ -29,7 +28,7 @@ __all__ = [
     'CustomDataset', 'build_dataloader', 'ConcatDataset', 'RepeatDataset',
     'DATASETS', 'build_dataset', 'PIPELINES', 'CityscapesDataset',
     'PascalVOCDataset', 'ADE20KDataset', 'PascalContextDataset',
-    'PascalContextDataset59', 'ChaseDB1Dataset', 'DRIVEDataset', 'HRFDataset',
+    'PascalContextDataset59', 'ChaseDB1Dataset', 'DRIVEDataset', 'HRFDataset', 'OCTHCMS2018Dataset',
     'OCTDataset', 'OCTDuke2015Dataset', 'OCTDuke2013Dataset', 'STAREDataset', 'DarkZurichDataset',
     'NightDrivingDataset', 'COCOStuffDataset', 'LoveDADataset', 'MultiImageMixDataset',
     'iSAIDDataset', 'ISPRSDataset', 'PotsdamDataset', 'FaceOccludedDataset',

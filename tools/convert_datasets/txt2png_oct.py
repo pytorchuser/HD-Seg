@@ -8,9 +8,9 @@ import numpy as np
 import json
 
 
-TXT_DIR = "../../data/oct_hc/txt"
-IMG_DIR = "../../data/oct_hc/img"
-SEG_DIR = "../../data/oct_hc/seg"
+TXT_DIR = "D:/dataset/OCTdataset/OCT_Manual_Delineations-2018_June_29（HCMS）/outputorg/label"
+IMG_DIR = "D:/dataset/OCTdataset/OCT_Manual_Delineations-2018_June_29（HCMS）/outputorg/image"
+SEG_DIR = "D:/dataset/OCTdataset/OCT_Manual_Delineations-2018_June_29（HCMS）/outputorg/seg"
 
 
 def txt2png():
@@ -21,7 +21,7 @@ def txt2png():
     for idx in range(len(label_list)):
         with open(str(label_list[idx]), 'r') as f:
             dicts = json.loads(f.read())
-        bds = np.array(dicts['bds'], dtype=np.float64) - 1
+        bds = np.array(dicts['bds'], dtype=np.float64)
         bds_list.append(bds)
         # mask = np.array(dicts['lesion'])
     for i in range(len(img_list)):
@@ -34,11 +34,11 @@ def txt2png():
         label = 0
         for x in range(image.size[0]):
             for y in range(image.size[1]):
-                if y == round(bds_list[i][x][label]):
+                if y == round(bds_list[i][label][x]):
                     label += 1
-                if label == len(bds_list[i][x]):
+                if label == bds_list[i].shape[0]:
                     label = 0
-                image.putpixel((x, y), label * 25)
+                image.putpixel((x, y), label)
 
         image.save(osp.join(SEG_DIR, img_names[i]))
         image.close()
