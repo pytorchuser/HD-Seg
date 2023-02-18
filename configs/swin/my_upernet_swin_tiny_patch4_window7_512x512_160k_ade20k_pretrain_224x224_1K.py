@@ -1,9 +1,10 @@
 _base_ = [
-    '../_base_/models/upernet_custom_swin.py', '../_base_/datasets/oct_hcms2018.py',
+    '../_base_/models/upernet_custom_swin.py', '../_base_/datasets/oct_duke2015.py',
     '../_base_/default_runtime.py', '../_base_/schedules/schedule_epoch.py'
 ]
 # checkpoint_file = 'https://download.openmmlab.com/mmsegmentation/v0.5/pretrain/swin/swin_tiny_patch4_window7_224_20220317-1cdeb081.pth'  # noqa
-NUM_CLASSES = 9
+NUM_CLASSES = 10
+
 
 model = dict(
     backbone=dict(
@@ -24,7 +25,7 @@ model = dict(
                      # msc_module_cfg=[
                      #     dict(type='PPM', layer_idx=0), dict(type='PPM', layer_idx=1)]
                      # msc_module_cfg=[
-                     #     dict(type='PPM', layer_idx=0), dict(type='PPM', layer_idx=1),
+                     #     dict(type='PPM', layer_idx=1), dict(type='PPM', layer_idx=2),
                      #     dict(type='PPM', layer_idx=3)]
                      ),
     auxiliary_head=dict(in_channels=384, num_classes=NUM_CLASSES))
@@ -33,7 +34,7 @@ model = dict(
 optimizer = dict(
      _delete_=True,
      type='AdamW',
-     lr=0.00018,
+     lr=0.00006,
      betas=(0.9, 0.999),
      weight_decay=0.01,
      paramwise_cfg=dict(
@@ -57,9 +58,7 @@ lr_config = dict(
 
 # By default, models are trained on 8 GPUs with 2 images per GPU
 # CUDA out of memory。 加载验证数据集时内存会爆掉， workers_per_gpu设置的小一些可避免这个问题
-data = dict(samples_per_gpu=2,
+data = dict(samples_per_gpu=4,
             val_dataloader=dict(samples_per_gpu=1, workers_per_gpu=1, shuffle=False),
             test_dataloader=dict(samples_per_gpu=1, workers_per_gpu=1, shuffle=False))
 
-# 2 个 epoch 训练，1 个 epoch 验证将交替运行。
-# workflow = [('train', 2)]

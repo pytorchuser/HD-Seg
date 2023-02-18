@@ -8,9 +8,9 @@ import numpy as np
 import json
 
 
-TXT_DIR = "D:/dataset/OCTdataset/OCT_Manual_Delineations-2018_June_29（HCMS）/outputorg/label"
-IMG_DIR = "D:/dataset/OCTdataset/OCT_Manual_Delineations-2018_June_29（HCMS）/outputorg/image"
-SEG_DIR = "D:/dataset/OCTdataset/OCT_Manual_Delineations-2018_June_29（HCMS）/outputorg/seg"
+TXT_DIR = "D:/dataset/OCTdataset/OCT_Manual_Delineations-2018_June_29（HCMS）/output/label"
+IMG_DIR = "D:/dataset/OCTdataset/OCT_Manual_Delineations-2018_June_29（HCMS）/output/image"
+SEG_DIR = "D:/dataset/OCTdataset/OCT_Manual_Delineations-2018_June_29（HCMS）/output/seg"
 
 
 def txt2png():

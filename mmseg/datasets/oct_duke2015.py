@@ -14,7 +14,10 @@ class OCTDuke2015Dataset(CustomDataset):
     '.png'.
     """
 
-    CLASSES = ('background1', 'RNFL', 'GCL',  'OPL', 'ONL', 'IS/OS', 'RPE', 'Choroid','background2','fluid')
+
+
+    # CLASSES = ('background1', 'RNFL', 'GCL',  'OPL', 'ONL', 'IS/OS', 'RPE', 'Choroid', 'background2', 'fluid')
+    CLASSES = ('background1', 'RNFL', 'GCIP',  'INL', 'OPL', 'ONL', 'IS', 'OS-RPE', 'background2', 'Fluid')
 
     PALETTE = [[0, 0, 0], [57, 57, 210], [49, 221, 25], [255, 0, 0], [187, 187, 34], [191, 38, 191],
                [122, 31, 31], [73, 159, 71], [141, 51, 141], [190, 70, 100]]
