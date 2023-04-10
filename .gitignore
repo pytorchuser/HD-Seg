@@ -118,3 +118,7 @@ mmseg/.mim
 
 # Pytorch
 *.pth
+
+#OutPut
+tools/output/
+pth/
