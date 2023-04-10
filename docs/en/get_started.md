@@ -159,7 +159,13 @@ thus we only need to install MMCV and MMSegmentation with the following commands
 !mim install "mmcv>=2.0.0"
 ```
 
+<<<<<<< HEAD
 **Step 2.** Install MMSegmentation from the source.
+=======
+A notebook demo can be found in [demo/inference_demo.ipynb](../../demo/inference_demo.ipynb).
+
+Now we also provide a demo script to test a single video.
+>>>>>>> 44cfe04 (fix: correct inference_demo.ipynb path (#1576))
 
 ```shell
 !git clone https://github.com/open-mmlab/mmsegmentation.git
