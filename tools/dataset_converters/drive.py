@@ -9,16 +9,20 @@ import cv2
 import mmcv
 from mmengine.utils import mkdir_or_exist
 
+TRAINING_PATH = '../../data/DRIVE/training.zip'
+TESTING_PATH = '../../data/DRIVE/training.zip'
+OUT_DIR = '../../data/DRIVE/new'
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
         description='Convert DRIVE dataset to mmsegmentation format')
     parser.add_argument(
-        'training_path', help='the training part of DRIVE dataset')
+        '--training_path', default=TRAINING_PATH, help='the training part of DRIVE dataset')
     parser.add_argument(
-        'testing_path', help='the testing part of DRIVE dataset')
+        '--testing_path', default=TESTING_PATH, help='the testing part of DRIVE dataset')
     parser.add_argument('--tmp_dir', help='path of the temporary directory')
-    parser.add_argument('-o', '--out_dir', help='output path')
+    parser.add_argument('-o', '--out_dir', default=OUT_DIR, help='output path')
     args = parser.parse_args()
     return args
 

@@ -8,6 +8,10 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+JSON_LOGS_DIR = 'tools/output/train/drive_unet_AdamW/20221124_160634.log.json'
+# METRIC_KEYS：想绘制的参数名称
+METRIC_KEYS = 'decode.acc_seg'
+
 
 def plot_curve(log_dicts, args):
     if args.backend is not None:
@@ -68,15 +72,16 @@ def plot_curve(log_dicts, args):
 def parse_args():
     parser = argparse.ArgumentParser(description='Analyze Json Log')
     parser.add_argument(
-        'json_logs',
+        '--json_logs',
         type=str,
         nargs='+',
+        default=JSON_LOGS_DIR,
         help='path of train log in json format')
     parser.add_argument(
         '--keys',
         type=str,
         nargs='+',
-        default=['mIoU'],
+        default=METRIC_KEYS,
         help='the metric that you want to plot')
     parser.add_argument('--title', type=str, help='title of figure')
     parser.add_argument(

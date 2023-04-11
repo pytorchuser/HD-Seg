@@ -11,6 +11,7 @@ from .decathlon import DecathlonDataset
 from .drive import DRIVEDataset
 from .face import FaceOccludedDataset
 from .hrf import HRFDataset
+from .oct import OCTDataset
 from .imagenets import (ImageNetSDataset, LoadImageNetSAnnotations,
                         LoadImageNetSImageFromFile)
 from .isaid import iSAIDDataset
@@ -46,7 +47,7 @@ __all__ = [
     'NightDrivingDataset', 'COCOStuffDataset', 'LoveDADataset',
     'MultiImageMixDataset', 'iSAIDDataset', 'ISPRSDataset', 'PotsdamDataset',
     'FaceOccludedDataset', 'ImageNetSDataset', 'LoadImageNetSAnnotations',
-    'LoadImageNetSImageFromFile',
+    'LoadImageNetSImageFromFile', 'OCTDataset',
     'LoadAnnotations', 'RandomCrop', 'SegRescale', 'PhotoMetricDistortion',
     'RandomRotate', 'AdjustGamma', 'CLAHE', 'Rerange', 'RGB2Gray',
     'RandomCutOut', 'RandomMosaic', 'PackSegInputs', 'ResizeToMultiple',

@@ -7,24 +7,33 @@ from mmengine.config import Config, DictAction
 from mmengine.runner import Runner
 
 
+CONFIG = '../configs/swin/my_upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K.py'
+CHECKPOINT = '../tools/output/train/oct_T_2_3lr_h_20k_largedataset800/latest.pth'
+WORK_DIR = 'output/train/oct_T_2_3lr_h_20k_largedataset800'
+OUT = 'output/test/oct_T_2_3lr_h_20k_largedataset800/results.pkl'
+SHOW_DIR = 'output/test/oct_T_2_3lr_h_20k_largedataset800'
+
+
 # TODO: support fuse_conv_bn, visualization, and format_only
 def parse_args():
     parser = argparse.ArgumentParser(
         description='MMSeg test (and eval) a model')
-    parser.add_argument('config', help='train config file path')
-    parser.add_argument('checkpoint', help='checkpoint file')
+    parser.add_argument('--config', default=CONFIG, help='train config file path')
+    parser.add_argument('--checkpoint', default=CHECKPOINT, help='checkpoint file')
     parser.add_argument(
-        '--work-dir',
+        '--work-dir', default=WORK_DIR,
         help=('if specified, the evaluation metric results will be dumped'
               'into the directory as json'))
     parser.add_argument(
         '--out',
         type=str,
+        default=OUT,
         help='The directory to save output prediction for offline evaluation')
     parser.add_argument(
         '--show', action='store_true', help='show prediction results')
     parser.add_argument(
         '--show-dir',
+        default=SHOW_DIR,
         help='directory where painted images will be saved. '
         'If specified, it will be automatically saved '
         'to the work_dir/timestamp/show_dir')
