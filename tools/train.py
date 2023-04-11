@@ -11,7 +11,7 @@ from mmengine.runner import Runner
 from mmseg.registry import RUNNERS
 
 CONFIG = '../configs/swin/my_upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K.py'
-WORK_DIR = 'output/train/oct_T_2_3lr_h_20k_largedataset800'
+WORK_DIR = 'output/train/oct_T_2_3lr_h_20k_octduke2015_800'
 LOAD_FROM = '../pth/upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210531_112542' \
             '-e380ad3e.pth '
 
