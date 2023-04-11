@@ -38,6 +38,7 @@ def init_model(config: Union[str, Path, Config],
     Returns:
         nn.Module: The constructed segmentor.
     """
+    # 校验配置文件类型
     if isinstance(config, (str, Path)):
         config = Config.fromfile(config)
     elif not isinstance(config, Config):
@@ -50,8 +51,9 @@ def init_model(config: Union[str, Path, Config],
     config.model.pretrained = None
     config.model.train_cfg = None
     init_default_scope(config.get('default_scope', 'mmseg'))
-
+    # 创建分割器
     model = MODELS.build(config.model)
+    # 下载检查点，并根据检查点配置分割器参数
     if checkpoint is not None:
         checkpoint = load_checkpoint(model, checkpoint, map_location='cpu')
         dataset_meta = checkpoint['meta'].get('dataset_meta', None)
