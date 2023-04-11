@@ -9,6 +9,7 @@ from .dark_zurich import DarkZurichDataset
 from .dataset_wrappers import MultiImageMixDataset
 from .decathlon import DecathlonDataset
 from .drive import DRIVEDataset
+from .face import FaceOccludedDataset
 from .hrf import HRFDataset
 from .isaid import iSAIDDataset
 from .isprs import ISPRSDataset
@@ -51,5 +52,5 @@ __all__ = [
     'BioMedicalGaussianNoise', 'BioMedicalGaussianBlur',
     'BioMedicalRandomGamma', 'BioMedical3DPad', 'RandomRotFlip',
     'SynapseDataset', 'REFUGEDataset', 'MapillaryDataset_v1',
-    'MapillaryDataset_v2'
+    'MapillaryDataset_v2', 'FaceOccludedDataset'
 ]
