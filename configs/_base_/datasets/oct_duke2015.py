@@ -1,9 +1,9 @@
 # dataset settings
 dataset_type = 'OCTDuke2015Dataset'
-data_root = '../data/Duke_OCT_dataset2015_BOE_Chiu/new'
+data_root = '../data/Duke_OCT_dataset2015_BOE_Chiu/new_82'
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
-img_scale = (605, 700)
+img_scale = (542, 496)
 crop_size = (512, 512)
 train_pipeline = [
     dict(type='LoadImageFromFile'),
@@ -25,7 +25,7 @@ test_pipeline = [
         # img_ratios=[0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0],
         flip=False,
         transforms=[
-            dict(type='Resize', keep_ratio=True),
+            dict(type='Resize', keep_ratio=False, img_scale=(496, 496)),
             dict(type='RandomFlip'),
             dict(type='Normalize', **img_norm_cfg),
             dict(type='ImageToTensor', keys=['img']),
