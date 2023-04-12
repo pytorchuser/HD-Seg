@@ -1,8 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import time
 import torch
 import torch.nn as nn
 from mmcv.cnn import ConvModule
 
+from ..utils import get_root_logger
 from mmseg.registry import MODELS
 from ..utils import resize
 from .decode_head import BaseDecodeHead
@@ -23,6 +25,8 @@ class UPerHead(BaseDecodeHead):
 
     def __init__(self, pool_scales=(1, 2, 3, 6), **kwargs):
         super().__init__(input_transform='multiple_select', **kwargs)
+        self.t = time.time()
+        self.logger = get_root_logger()
         # PSP Module
         self.psp_modules = PPM(
             pool_scales,
@@ -40,6 +44,8 @@ class UPerHead(BaseDecodeHead):
             conv_cfg=self.conv_cfg,
             norm_cfg=self.norm_cfg,
             act_cfg=self.act_cfg)
+        t1 = time.time()
+        self.logger.info(f'psp module初始化耗时：{t1-self.t}, 累计总时长：{t1-self.t}')
         # FPN Module
         self.lateral_convs = nn.ModuleList()
         self.fpn_convs = nn.ModuleList()
@@ -72,9 +78,12 @@ class UPerHead(BaseDecodeHead):
             conv_cfg=self.conv_cfg,
             norm_cfg=self.norm_cfg,
             act_cfg=self.act_cfg)
+        t2 = time.time()
+        self.logger.info(f'fpn module初始化耗时：{t2 - t1}, 累计总时长：{t2 - self.t}')
 
     def psp_forward(self, inputs):
         """Forward function of PSP module."""
+        t = time.time()
         # -1, x 就是 inputs 的最后的特征
         x = inputs[-1]
         # 原图 x 及其 进行psp的特征都放入 列表中进行保存
@@ -84,6 +93,7 @@ class UPerHead(BaseDecodeHead):
         psp_outs = torch.cat(psp_outs, dim=1)
         # 拼完后的结构再进行一次 3*3的卷积，把输出的channel从2816给降维到512，返回结果到UPerHead的 forward中
         output = self.bottleneck(psp_outs)
+        self.logger.info(f'psp_forward执行一次耗时：{time.time() - t}, 累计总时长：{time.time() - self.t}')
         return output
 
     def _forward_feature(self, inputs):
@@ -105,10 +115,11 @@ class UPerHead(BaseDecodeHead):
             lateral_conv(inputs[i])
             for i, lateral_conv in enumerate(self.lateral_convs)
         ]
-
+        t = time.time()
         # 深层的特征单独拿出来进行psp forward，在psp forward中，取了input的最后一层
         laterals.append(self.psp_forward(inputs))
-
+        t1 = time.time()
+        self.logger.info(f'循环laterals.append耗时：{t1 - t}, 累计总时长：{t1 - self.t}')
         # build top-down path
         used_backbone_levels = len(laterals)
 
@@ -121,14 +132,16 @@ class UPerHead(BaseDecodeHead):
                 size=prev_shape,
                 mode='bilinear',
                 align_corners=self.align_corners)
-
+        t2 = time.time()
+        self.logger.info(f'循环laterals.insert耗时：{t2 - t1}, 累计总时长：{t2 - self.t}')
         # 这里的遍历是[32] [64] [128]的3个残差连接后的特征图再各自走了一个卷积
         # build outputs
         fpn_outs = [
             self.fpn_convs[i](laterals[i])
             for i in range(used_backbone_levels - 1)
         ]
-
+        t3 = time.time()
+        self.logger.info(f'fpn_outs耗时：{t3 - t2}, 累计总时长：{t3 - self.t}')
         # 把psp那个[16,16]的特征图也加进来成为4个特征图
         # append psp feature
         fpn_outs.append(laterals[-1])
