@@ -1,6 +1,6 @@
 _base_ = [
     '../_base_/models/upernet_swin.py', '../_base_/datasets/oct_duke2015.py',
-    '../_base_/default_runtime.py', '../_base_/schedules/schedule_epoch.py'
+    '../_base_/default_runtime.py', '../_base_/schedules/schedule_800.py'
 ]
 # checkpoint_file = 'https://download.openmmlab.com/mmsegmentation/v0.5/pretrain/swin/swin_tiny_patch4_window7_224_20220317-1cdeb081.pth'  # noqa
 NUM_CLASSES = 10
@@ -15,18 +15,7 @@ model = dict(
         use_abs_pos_embed=False,
         drop_path_rate=0.3,
         patch_norm=True),
-    # TODO 此处添加配置信息msc_module_cfg
-    decode_head=dict(in_channels=[96, 192, 384, 768], num_classes=NUM_CLASSES,
-                     msc_module_cfg=[
-                         dict(type='PPM', layer_idx=0), dict(type='PPM', layer_idx=1),
-                         dict(type='PPM', layer_idx=2), dict(type='PPM', layer_idx=3)]
-                     # msc_module_cfg=[dict(type='PPM', layer_idx=0)]
-                     # msc_module_cfg=[
-                     #     dict(type='PPM', layer_idx=0), dict(type='PPM', layer_idx=1)]
-                     # msc_module_cfg=[
-                     #     dict(type='PPM', layer_idx=0), dict(type='PPM', layer_idx=1),
-                     #     dict(type='PPM', layer_idx=3)]
-                     ),
+    decode_head=dict(in_channels=[96, 192, 384, 768], num_classes=NUM_CLASSES),
     auxiliary_head=dict(in_channels=384, num_classes=NUM_CLASSES))
 
 # AdamW optimizer, no weight decay for position embedding & layer norm in backbone
