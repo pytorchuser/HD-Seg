@@ -14,6 +14,7 @@ from .hrf import HRFDataset
 from .oct import OCTDataset
 from .oct_duke2015 import OCTDuke2015Dataset
 from .oct_duke2013 import OCTDuke2013Dataset
+from .oct_hcms2018 import OCTHCMS2018Dataset
 from .imagenets import (ImageNetSDataset, LoadImageNetSAnnotations,
                         LoadImageNetSImageFromFile)
 from .isaid import iSAIDDataset
@@ -49,7 +50,8 @@ __all__ = [
     'NightDrivingDataset', 'COCOStuffDataset', 'LoveDADataset',
     'MultiImageMixDataset', 'iSAIDDataset', 'ISPRSDataset', 'PotsdamDataset',
     'FaceOccludedDataset', 'ImageNetSDataset', 'LoadImageNetSAnnotations',
-    'LoadImageNetSImageFromFile', 'OCTDataset', 'OCTDuke2015Dataset', 'OCTDuke2013Dataset',
+    'LoadImageNetSImageFromFile', 'OCTDataset', 'OCTDuke2015Dataset',
+    'OCTDuke2013Dataset', 'OCTHCMS2018Dataset',
     'LoadAnnotations', 'RandomCrop', 'SegRescale', 'PhotoMetricDistortion',
     'RandomRotate', 'AdjustGamma', 'CLAHE', 'Rerange', 'RGB2Gray',
     'RandomCutOut', 'RandomMosaic', 'PackSegInputs', 'ResizeToMultiple',

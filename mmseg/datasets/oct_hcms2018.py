@@ -5,7 +5,7 @@ from .custom import CustomDataset
 
 
 @DATASETS.register_module()
-class OCTDuke2015Dataset(CustomDataset):
+class OCTHCMS2018Dataset(CustomDataset):
     """OCTDuke2015 dataset.
 
     In segmentation map annotation for OCTDuke2015, 0 stands for background, which is
@@ -14,13 +14,13 @@ class OCTDuke2015Dataset(CustomDataset):
     '.png'.
     """
 
-    CLASSES = ('background1', 'RNFL', 'GCL',  'OPL', 'ONL', 'IS/OS', 'RPE', 'Choroid','background2','fluid')
+    CLASSES = ('background', 'RNFL', 'GCL+IPL',  'INL', 'OPL', 'ONL', 'IS', 'OS', 'RPE')
 
     PALETTE = [[0, 0, 0], [57, 57, 210], [49, 221, 25], [255, 0, 0], [187, 187, 34], [191, 38, 191],
-               [122, 31, 31], [73, 159, 71], [141, 51, 141], [190, 70, 100]]
+               [122, 31, 31], [73, 159, 71], [141, 51, 141]]
 
     def __init__(self, **kwargs):
-        super(OCTDuke2015Dataset, self).__init__(
+        super(OCTHCMS2018Dataset, self).__init__(
             img_suffix='.png',
             seg_map_suffix='.png',
             reduce_zero_label=False,
