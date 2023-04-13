@@ -44,21 +44,41 @@ optimizer = dict(
              'norm': dict(decay_mult=0.),
              'head': dict(lr_mult=10.)
          }))
-
-lr_config = dict(
-    _delete_=True,
-    policy='poly',
-    warmup='linear',
-    warmup_iters=1500,
-    warmup_ratio=1e-6,
-    power=1.0,
-    min_lr=0.0,
-    # by_epoch=True
-)
+param_scheduler = [
+    dict(
+        type='LinearLR',
+        start_factor=1e-6,
+        by_epoch=False,
+        begin=0,
+        end=1500),
+    dict(
+        type='PolyLR',
+        power=1.0,
+        begin=1500,
+        end=160000,
+        eta_min=0.0,
+        by_epoch=False,
+    )
+]
 
 # By default, models are trained on 8 GPUs with 2 images per GPU
 # CUDA out of memory。 加载验证数据集时内存会爆掉， workers_per_gpu设置的小一些可避免这个问题
-data = dict(samples_per_gpu=4,
-            val_dataloader=dict(samples_per_gpu=1, workers_per_gpu=1, shuffle=False),
-            test_dataloader=dict(samples_per_gpu=1, workers_per_gpu=1, shuffle=False))
-
+train_dataloader = dict(
+    batch_size=4
+)
+val_dataloader = dict(
+    batch_size=1,
+    num_workers=1,
+    sampler=dict(
+        type='DefaultSampler',
+        # 训练时不进行随机洗牌(shuffle)
+        shuffle=False)
+)
+test_dataloader = dict(
+    batch_size=1,
+    num_workers=1,
+    sampler=dict(
+        type='DefaultSampler',
+        # 训练时不进行随机洗牌(shuffle)
+        shuffle=False)
+)
