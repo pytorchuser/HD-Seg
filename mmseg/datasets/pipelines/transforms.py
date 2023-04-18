@@ -148,6 +148,7 @@ class Resize(object):
         """
 
         assert mmcv.is_list_of(img_scales, tuple)
+        # 根据多尺度数组长度随机一个索引，返回该索引对应的尺度
         scale_idx = np.random.randint(len(img_scales))
         img_scale = img_scales[scale_idx]
         return img_scale, scale_idx
@@ -168,11 +169,15 @@ class Resize(object):
         """
 
         assert mmcv.is_list_of(img_scales, tuple) and len(img_scales) == 2
+        # 取每对值里面的最大值，组成长边数组
         img_scale_long = [max(s) for s in img_scales]
+        # 取每对值里面的最小值，组成短边数组
         img_scale_short = [min(s) for s in img_scales]
+        # 以长边数组的极值为范围，随机一个整数
         long_edge = np.random.randint(
             min(img_scale_long),
             max(img_scale_long) + 1)
+        # 以短边数组的极值为范围，随机一个整数
         short_edge = np.random.randint(
             min(img_scale_short),
             max(img_scale_short) + 1)
@@ -202,7 +207,9 @@ class Resize(object):
         assert isinstance(img_scale, tuple) and len(img_scale) == 2
         min_ratio, max_ratio = ratio_range
         assert min_ratio <= max_ratio
+        # 在'ratio_range'范围内得到随机一个值，为ratio
         ratio = np.random.random_sample() * (max_ratio - min_ratio) + min_ratio
+        # 与'img_scale'相乘，并取整
         scale = int(img_scale[0] * ratio), int(img_scale[1] * ratio)
         return scale, None
 
@@ -223,8 +230,9 @@ class Resize(object):
             dict: Two new keys 'scale` and 'scale_idx` are added into
                 ``results``, which would be used by subsequent pipelines.
         """
-
+        # ``ratio_range``存在时，在范围内随机一个值，与``img_scale``相乘，得到 'scale' 的值
         if self.ratio_range is not None:
+            # ``img_scale``不存在时，用 'img' 代替，得到 'scale' 的值
             if self.img_scale is None:
                 h, w = results['img'].shape[:2]
                 scale, scale_idx = self.random_sample_ratio((w, h),
@@ -232,11 +240,22 @@ class Resize(object):
             else:
                 scale, scale_idx = self.random_sample_ratio(
                     self.img_scale[0], self.ratio_range)
+        # ``ratio_range``不存在，且``img_scale``为单尺度(l, s)时
         elif len(self.img_scale) == 1:
+            # 取``img_scale``的值为 'scale' 的值
             scale, scale_idx = self.img_scale[0], 0
+        # ``ratio_range``不存在，且``img_scale``为多尺度[(l0, s0),(l1, s1)]，且 'range' 模式时
         elif self.multiscale_mode == 'range':
+            # 将每个尺度中的值，组成长边和短边数组，取每个数组的最大值和最小值为范围，随机一个数，组成 'scale' 的值
+            # 例``img_scale``为多尺度[(600, 700),(1024, 700),(512, 500)]时，
+            # 长边数组为[700,1024,512],短边数组为[600,700,500]
+            # 'scale' 为(512~1024, 500~700)范围内随机出来的一个值
             scale, scale_idx = self.random_sample(self.img_scale)
+        # ``ratio_range``不存在，且``img_scale``为多尺度[(l0, s0),(l1, s1)]，且 'value' 模式时
         elif self.multiscale_mode == 'value':
+            # 从尺度中随机选择一个作为 'scale' 的值，并记录其在尺度数列中的索引
+            # 例``img_scale``为多尺度[(600, 700),(1024, 700),(512, 500)]时，
+            # 'scale' 可能为(1024, 700)，此时 'scale_idx' 为1
             scale, scale_idx = self.random_select(self.img_scale)
         else:
             raise NotImplementedError
@@ -264,15 +283,19 @@ class Resize(object):
                     new_h, new_w = new_short, new_short * w / h
                 results['scale'] = (new_h, new_w)
 
+            # 保持图片宽高比，计算 'scale' 长边/'img' 长边，'scale' 短边/'img' 短边
+            # 两个比例中选较小的作为缩放比例，乘以 'img' 的宽高，获得尺寸，进行图片缩放
             img, scale_factor = mmcv.imrescale(
                 results['img'], results['scale'], return_scale=True)
             # the w_scale and h_scale has minor difference
             # a real fix should be done in the mmcv.imrescale in the future
+            # 计算新尺寸/原尺寸比例
             new_h, new_w = img.shape[:2]
             h, w = results['img'].shape[:2]
             w_scale = new_w / w
             h_scale = new_h / h
         else:
+            # 不保持图片宽高比，直接按照 'scale' 尺寸进行图片缩放
             img, w_scale, h_scale = mmcv.imresize(
                 results['img'], results['scale'], return_scale=True)
         scale_factor = np.array([w_scale, h_scale, w_scale, h_scale],
@@ -306,8 +329,11 @@ class Resize(object):
                 'keep_ratio' keys are added into result dict.
         """
 
+        # ``results`` 中没有 'scale'，
+        # 则根据``img_scale``和``ratio_range``随机生成一个值，并插入到``results``中
         if 'scale' not in results:
             self._random_scale(results)
+        # 根据 'scale' 值，对 'img' 和 'gt_semantic_seg' 进行缩放。
         self._resize_img(results)
         self._resize_seg(results)
         return results
@@ -354,10 +380,11 @@ class RandomFlip(object):
             dict: Flipped results, 'flip', 'flip_direction' keys are added into
                 result dict.
         """
-
+        # 随机一个数，比``prob``小，则进行翻转
         if 'flip' not in results:
             flip = True if np.random.rand() < self.prob else False
             results['flip'] = flip
+        # 未规定翻转方向，则默认水平翻转
         if 'flip_direction' not in results:
             results['flip_direction'] = self.direction
         if results['flip']:
@@ -408,6 +435,8 @@ class Pad(object):
     def _pad_img(self, results):
         """Pad images according to ``self.size``."""
         if self.size is not None:
+            # 在 'img' 的bottom，right按 'pad_val' 填充成 'shape' 大小。
+            # 'img' 宽或高大于 'shape' 宽或高，则对应宽或高不进行填充
             padded_img = mmcv.impad(
                 results['img'], shape=self.size, pad_val=self.pad_val)
         elif self.size_divisor is not None:
@@ -598,6 +627,8 @@ class RandomCrop(object):
 
     def get_crop_bbox(self, img):
         """Randomly get a crop bounding box."""
+        # 计算原图与裁剪尺寸之间的差值，在差值中随机一个数值作为起始坐标
+        # 原图尺寸小于裁剪尺寸，差值为0
         margin_h = max(img.shape[0] - self.crop_size[0], 0)
         margin_w = max(img.shape[1] - self.crop_size[1], 0)
         offset_h = np.random.randint(0, margin_h + 1)
@@ -625,16 +656,22 @@ class RandomCrop(object):
         """
 
         img = results['img']
+        # 计算随机裁剪框大小
         crop_bbox = self.get_crop_bbox(img)
+        # 设置单个类别填充最大比例时，需要校验
         if self.cat_max_ratio < 1.:
             # Repeat 10 times
             for _ in range(10):
+                # 用裁剪框裁剪
                 seg_temp = self.crop(results['gt_semantic_seg'], crop_bbox)
+                # 统计所有labels和其出现的次数总和
                 labels, cnt = np.unique(seg_temp, return_counts=True)
                 cnt = cnt[labels != self.ignore_index]
+                # 最大的次数/labels次数总和 小于 单个类别填充最大比例时，裁剪生效
                 if len(cnt) > 1 and np.max(cnt) / np.sum(
                         cnt) < self.cat_max_ratio:
                     break
+                # 否则重新计算随机裁剪框大小
                 crop_bbox = self.get_crop_bbox(img)
 
         # crop the image
