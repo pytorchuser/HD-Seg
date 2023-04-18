@@ -5,8 +5,11 @@ _base_ = [
 # checkpoint_file = 'https://download.openmmlab.com/mmsegmentation/v0.5/pretrain/swin/swin_tiny_patch4_window7_224_20220317-1cdeb081.pth'  # noqa
 NUM_CLASSES = 10
 
+crop_size = (512, 512)
+data_preprocessor = dict(size=crop_size)
 
 model = dict(
+    data_preprocessor=data_preprocessor,
     backbone=dict(
         # init_cfg=dict(type='Pretrained', checkpoint=checkpoint_file),
         embed_dims=96,

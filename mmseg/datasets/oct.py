@@ -28,4 +28,3 @@ class OCTDataset(BaseSegDataset):
             seg_map_suffix=seg_map_suffix,
             reduce_zero_label=reduce_zero_label,
             **kwargs)
-        assert self.file_client.exists(self.img_dir)
