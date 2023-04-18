@@ -23,8 +23,8 @@ from mmseg.utils import (collect_env, get_device, get_root_logger,
                          setup_multi_processes)
 
 CONFIG = '../configs/swin/my_upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K.py'
-WORK_DIR = 'output/train/oct_T_4_1lr_h_octduke2015_epoch500_ppm_1(3)'
-LOAD_FROM = '../pth/upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210531_112542-e380ad3e.pth '
+WORK_DIR = 'output/train/oct_T_8_lr_h_atdr&ddr=0.2_keep_ratio=False_ps=4_octhcms2018org_epoch100_ppm_1(3)'
+LOAD_FROM = '../pth/upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210531_112542-e380ad3e.pth'
 
 
 def parse_args():

@@ -8,9 +8,9 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-JSON_LOGS_DIR = 'tools/output/train/drive_unet_AdamW/20221124_160634.log.json'
+JSON_LOGS_DIR = ['../tools/output/train/oct_T_8_lr_h_window_size=8_embed_dims=128_octhcms2018org_epoch50_ppm_1(3)/20230311_111611.log.json']
 # METRIC_KEYS：想绘制的参数名称
-METRIC_KEYS = 'decode.acc_seg'
+METRIC_KEYS = ['loss']
 
 
 def plot_curve(log_dicts, args):

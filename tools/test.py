@@ -19,13 +19,13 @@ from mmseg.datasets import build_dataloader, build_dataset
 from mmseg.models import build_segmentor
 from mmseg.utils import build_ddp, build_dp, get_device, setup_multi_processes
 
-FILENAME = 'oct_T_2_3lr_h_octduke2015_800_epoch'
+FILENAME = 'oct_T_8_lr_h_patch_size=8_octhcms2018_448_epoch100_ppm_1(3)'
 
 CONFIG = '../configs/swin/my_upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K.py'
 CHECKPOINT = '../tools/output/train/' + FILENAME + '/latest.pth'
 WORK_DIR = 'output/train/' + FILENAME
 OUT = 'output/test/' + FILENAME + '/results.pkl'
-EVAL = 'mIoU'
+EVAL = 'mDice'
 SHOW_DIR = 'output/test/' + FILENAME
 
 
