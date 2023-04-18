@@ -5,8 +5,8 @@ import torch
 import torch.nn as nn
 from mmcv.cnn import ConvModule
 
-from mmseg.utils import get_root_logger
-from mmseg.ops import resize
+from mmengine.logging import MMLogger
+from ..utils import resize
 from ..builder import HEADS
 from .decode_head import BaseDecodeHead
 from .psp_head import PPM
@@ -28,7 +28,7 @@ class UPerCustomHead(BaseDecodeHead):
         super(UPerCustomHead, self).__init__(
             input_transform='multiple_select', **kwargs)
         self.t = time.time()
-        self.logger = get_root_logger()
+        self.logger = MMLogger.get_instance('loggerUPerCustomHead')
         # PSP Module
         # 读取配置文件的参数，初始化PPM或其他(UFE)处理模型列表
         # 初始化对应的bottleneck卷积模型列表

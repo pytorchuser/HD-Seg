@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 from mmcv.cnn import ConvModule
 
-from ..utils import get_root_logger
+from mmengine.logging import MMLogger
 from mmseg.registry import MODELS
 from ..utils import resize
 from .decode_head import BaseDecodeHead
@@ -26,7 +26,7 @@ class UPerHead(BaseDecodeHead):
     def __init__(self, pool_scales=(1, 2, 3, 6), **kwargs):
         super().__init__(input_transform='multiple_select', **kwargs)
         self.t = time.time()
-        self.logger = get_root_logger()
+        self.logger = MMLogger.get_instance('loggerUPerHead')
         # PSP Module
         self.psp_modules = PPM(
             pool_scales,
