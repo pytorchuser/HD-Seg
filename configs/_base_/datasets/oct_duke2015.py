@@ -1,6 +1,6 @@
 # dataset settings
 dataset_type = 'OCTDuke2015Dataset'
-data_root = 'data/Duke_OCT_dataset2015_BOE_Chiu/new_82'
+data_root = '../data/Duke_OCT_dataset2015_BOE_Chiu/new'
 img_scale = (542, 496)
 crop_size = (512, 512)
 train_pipeline = [

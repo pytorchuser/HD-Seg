@@ -2,7 +2,7 @@
 dataset_type = 'OCTDuke2013Dataset'
 # data_root = 'data/Duke_OCT_dataset2013/AMD(269)/new'
 # data_root = 'data/Duke_OCT_dataset2013/Control2(normal115)/new'
-data_root = 'data/Duke_OCT_dataset2013/All/new'
+data_root = '../data/Duke_OCT_dataset2013/All/new'
 img_scale = (605, 700)
 crop_size = (512, 512)
 train_pipeline = [

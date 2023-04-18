@@ -2,7 +2,7 @@
 # 数据集类型，这将被用来定义数据集
 dataset_type = 'OCTDataset'
 # 数据的根路径
-data_root = 'data/OCT/new1'
+data_root = '../data/OCT/new1'
 # 训练时的裁剪大小
 crop_size = (512, 512)
 # 数据增广时，图像裁剪的大小
