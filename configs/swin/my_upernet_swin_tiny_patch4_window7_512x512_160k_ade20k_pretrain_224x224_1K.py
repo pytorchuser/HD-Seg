@@ -1,9 +1,9 @@
 _base_ = [
-    '../_base_/models/upernet_custom_swin.py', '../_base_/datasets/oct_duke2015.py',
+    '../_base_/models/upernet_custom_swin.py', '../_base_/datasets/oct_hcms2018.py',
     '../_base_/default_runtime.py', '../_base_/schedules/schedule_epoch.py'
 ]
 # checkpoint_file = 'https://download.openmmlab.com/mmsegmentation/v0.5/pretrain/swin/swin_tiny_patch4_window7_224_20220317-1cdeb081.pth'  # noqa
-NUM_CLASSES = 10
+NUM_CLASSES = 9
 
 crop_size = (512, 512)
 data_preprocessor = dict(size=crop_size)
@@ -51,26 +51,26 @@ param_scheduler = [
     dict(
         type='LinearLR',
         start_factor=1e-6,
-        by_epoch=False,
+        by_epoch=True,
         begin=0,
-        end=1500),
+        end=10),
     dict(
         type='PolyLR',
         power=1.0,
-        begin=1500,
-        end=160000,
+        begin=10,
+        end=50,
         eta_min=0.0,
-        by_epoch=False,
+        by_epoch=True,
     )
 ]
 
 # By default, models are trained on 8 GPUs with 2 images per GPU
 # CUDA out of memory。 加载验证数据集时内存会爆掉， workers_per_gpu设置的小一些可避免这个问题
 train_dataloader = dict(
-    batch_size=4
+    batch_size=8
 )
 val_dataloader = dict(
-    batch_size=1,
+    batch_size=8,
     num_workers=1,
     sampler=dict(
         type='DefaultSampler',
@@ -78,7 +78,7 @@ val_dataloader = dict(
         shuffle=False)
 )
 test_dataloader = dict(
-    batch_size=1,
+    batch_size=8,
     num_workers=1,
     sampler=dict(
         type='DefaultSampler',

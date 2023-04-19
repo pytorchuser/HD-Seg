@@ -42,7 +42,7 @@ default_hooks = dict(
     # 记录迭代过程中花费的时间
     timer=dict(type='IterTimerHook'),
     # 从'Runner'的不同组件收集和写入日志, 每50次迭代打印一次日志
-    logger=dict(type='LoggerHook', interval=50, log_metric_by_epoch=False),
+    logger=dict(type='LoggerHook', interval=50, log_metric_by_epoch=True),
     # 更新优化器中的一些超参数，例如学习率
     param_scheduler=dict(type='ParamSchedulerHook'),
     # save_best = ['acc', 'top', 'AR@', 'auc', 'precision', 'mAP', 'mDice', 'mIoU', 'mAcc', 'aAcc']
