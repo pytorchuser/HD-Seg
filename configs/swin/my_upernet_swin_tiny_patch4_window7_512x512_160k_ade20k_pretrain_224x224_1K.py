@@ -70,18 +70,18 @@ train_dataloader = dict(
     batch_size=8
 )
 val_dataloader = dict(
-    batch_size=8,
+    batch_size=1,
     num_workers=1,
     sampler=dict(
         type='DefaultSampler',
-        # 训练时不进行随机洗牌(shuffle)
-        shuffle=False)
+        # 训练时进行随机洗牌(shuffle)
+        shuffle=True)
 )
 test_dataloader = dict(
-    batch_size=8,
+    batch_size=1,
     num_workers=1,
     sampler=dict(
         type='DefaultSampler',
-        # 训练时不进行随机洗牌(shuffle)
-        shuffle=False)
+        # 训练时进行随机洗牌(shuffle)
+        shuffle=True)
 )

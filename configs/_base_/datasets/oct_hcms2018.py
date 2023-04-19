@@ -1,6 +1,6 @@
 # dataset settings
 dataset_type = 'OCTHCMS2018Dataset'
-data_root = '../data/OCT_Manual_Delineations-2018_June_29(HCMS)/flatten/new'
+data_root = '../data/OCT_Manual_Delineations-2018_June_29(HCMS)/org/new'
 img_scale = (1024, 496)
 crop_size = (512, 512)
 # img_scale = (1024, 128)
@@ -23,7 +23,7 @@ test_pipeline = [
     dict(type='Resize', scale=img_scale, keep_ratio=True),
     # add loading annotation after ``Resize`` because ground truth
     # does not need to do resize data transform
-    dict(type='LoadAnnotations', reduce_zero_label=True),
+    dict(type='LoadAnnotations', reduce_zero_label=False),
     dict(type='PackSegInputs')
 ]
 img_ratios = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75]
@@ -45,10 +45,10 @@ tta_pipeline = [
         ])
 ]
 train_dataloader = dict(
-    batch_size=2,
-    num_workers=4,
+    batch_size=8,
+    num_workers=2,
     persistent_workers=True,
-    sampler=dict(type='InfiniteSampler', shuffle=True),
+    sampler=dict(type='DefaultSampler', shuffle=True),
     dataset=dict(
         type=dataset_type,
         data_root=data_root,
@@ -56,10 +56,10 @@ train_dataloader = dict(
             img_path='images/training', seg_map_path='annotations/training'),
         pipeline=train_pipeline))
 val_dataloader = dict(
-    batch_size=1,
-    num_workers=4,
+    batch_size=8,
+    num_workers=1,
     persistent_workers=True,
-    sampler=dict(type='DefaultSampler', shuffle=False),
+    sampler=dict(type='DefaultSampler', shuffle=True),
     dataset=dict(
         type=dataset_type,
         data_root=data_root,
@@ -69,5 +69,5 @@ val_dataloader = dict(
         pipeline=test_pipeline))
 test_dataloader = val_dataloader
 
-val_evaluator = dict(type='IoUMetric', iou_metrics=['mIoU'])
+val_evaluator = dict(type='IoUMetric', iou_metrics=['mDice', 'mIoU'])
 test_evaluator = val_evaluator
