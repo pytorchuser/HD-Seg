@@ -25,7 +25,17 @@ model = dict(
                      # msc_module_cfg=[
                      #     dict(type='PPM', layer_idx=0), dict(type='PPM', layer_idx=1),
                      #     dict(type='PPM', layer_idx=2), dict(type='PPM', layer_idx=3)]
-                     msc_module_cfg=[dict(type='PPM', layer_idx=3)]
+                     msc_module_cfg=[
+                        dict(type='UFE', layer_idx=2, ufe_cfg=dict(
+                            num_stages=3,
+                            strides=(1, 1, 1),
+                            enc_num_convs=(1, 1, 1),
+                            dec_num_convs=(1, 1),
+                            downsamples=(True, True),
+                            enc_dilations=(1, 1, 1),
+                            dec_dilations=(1, 1),)),
+                        dict(type='PPM', layer_idx=3)
+                     ]
                      # msc_module_cfg=[
                      #     dict(type='PPM', layer_idx=0), dict(type='PPM', layer_idx=1)]
                      # msc_module_cfg=[

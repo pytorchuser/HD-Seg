@@ -10,6 +10,7 @@ from ..utils import resize
 from ..builder import HEADS
 from .decode_head import BaseDecodeHead
 from .psp_head import PPM
+from .ufe_module import UFE
 
 
 @HEADS.register_module()
@@ -85,21 +86,26 @@ class UPerCustomHead(BaseDecodeHead):
     # idx： 特殊处理的层级layer_idx inputs[idx]
     # module_idx： idx对应卷积module的下标 fe_modules[module_idx]
     # 用idx和module_idx确保卷积层in_channel一一对应
-    def fe_forward(self, inputs, idx, module_idx):
+    def fe_forward(self, inputs, idx, module_type, module_idx):
         """Forward function of PSP or other module."""
         t = time.time()
         # -1, x 就是 inputs 的最后的特征
         x = inputs[idx]
         # 原图 x 及其 进行psp的特征都放入 列表中进行保存
         psp_outs = [x]  # 原图 x
-        # 添加根据idx来处理的过程，注意psp_modules[]要取对应下标的
-        psp_outs.extend(self.fe_modules[module_idx](x))  # 返回的4个pmp block的输出
-        # 把他们拼在一起后: psp_outs: [2, 2816, 16, 16]
-        psp_outs = torch.cat(psp_outs, dim=1)
-        # 拼完后的结构再进行一次 3*3的卷积，把输出的channel从2816给降维到512，返回结果到UPerHead的 forward中
-        output = self.bottleneck_modules[module_idx](psp_outs)
+        if module_type == 'PPM':
+            # 添加根据idx来处理的过程，注意psp_modules[]要取对应下标的
+            psp_outs.extend(self.fe_modules[module_idx](x))  # 返回的4个pmp block的输出
+            # 把他们拼在一起后: psp_outs: [2, 2816, 16, 16]
+            psp_outs = torch.cat(psp_outs, dim=1)
+            # 拼完后的结构再进行一次 3*3的卷积，把输出的channel从2816给降维到512，返回结果到UPerHead的 forward中
+            output = self.bottleneck_modules[module_idx](psp_outs)
+            return output
         # self.logger.info(f'fe_forward执行一次耗时：{time.time() - t}, 累计总时长：{time.time() - self.t}')
-        return output
+        elif module_type == 'UFE':
+            psp_outs.extend(self.fe_modules[module_idx](x))
+            output = self.bottleneck_modules[module_idx](psp_outs[-1])
+            return output
 
     def _forward_feature(self, inputs):
         """Forward function for feature maps before classifying each pixel with
@@ -127,7 +133,8 @@ class UPerCustomHead(BaseDecodeHead):
         if self.msc_module_cfg is not None:
             for i in range(len(self.msc_module_cfg)):
                 msc_layer_idx = self.msc_module_cfg[i].layer_idx
-                laterals.insert(msc_layer_idx, self.fe_forward(inputs, msc_layer_idx, i))
+                msc_layer_type = self.msc_module_cfg[i].type
+                laterals.insert(msc_layer_idx, self.fe_forward(inputs, msc_layer_idx, msc_layer_type, i))
         t1 = time.time()
         # self.logger.info(f'循环laterals.insert耗时：{t1 - t}, 累计总时长：{t1 - self.t}')
 
@@ -189,11 +196,13 @@ class UPerCustomHead(BaseDecodeHead):
         if self.msc_module_cfg is None:
             return None, None
         fe_modules = nn.ModuleList()
+        # 使用特殊处理时，需要将管道数调整为512的卷积层
         bottleneck_modules = nn.ModuleList()
         # msc_module_cfg=[dict(type='PPM', layer_idx=3), dict(type='MSC', layer_idx=2]
         for i in range(len(self.msc_module_cfg)):
             layer_idx = self.msc_module_cfg[i].layer_idx
-            if self.msc_module_cfg[i].type == 'PPM':
+            module_type = self.msc_module_cfg[i].type
+            if module_type == 'PPM':
                 # 根据下标取对应层级的模型（确保self.in_channels[-1]能一一对应）
                 fe_module = PPM(
                     pool_scales,
@@ -203,19 +212,38 @@ class UPerCustomHead(BaseDecodeHead):
                     norm_cfg=self.norm_cfg,
                     act_cfg=self.act_cfg,
                     align_corners=self.align_corners)
+
+                fe_modules.append(fe_module)
+                # 生成对应的bottleneck，in_channels[i]需对应
+                bottleneck = ConvModule(
+                    self.in_channels[layer_idx] + len(pool_scales) * self.channels,
+                    self.channels,
+                    3,
+                    padding=1,
+                    conv_cfg=self.conv_cfg,
+                    norm_cfg=self.norm_cfg,
+                    act_cfg=self.act_cfg)
+                bottleneck_modules.append(bottleneck)
             # TODO 新增其他类型的优化模块时，在此处添加elif，初始化不同类型的功能模块存入列表，后续fe_forward()要用
+            elif module_type == 'UFE':
+
+                fe_module = UFE(
+                    in_channels=self.in_channels[layer_idx],
+                    base_channels=self.in_channels[layer_idx],
+                    **self.msc_module_cfg[i].ufe_cfg,
+                    conv_cfg=self.conv_cfg,
+                    norm_cfg=self.norm_cfg,
+                    act_cfg=self.act_cfg)
 
                 fe_modules.append(fe_module)
 
-            # 生成对应的bottleneck，in_channels[i]需对应
-            bottleneck = ConvModule(
-                self.in_channels[layer_idx] + len(pool_scales) * self.channels,
-                self.channels,
-                3,
-                padding=1,
-                conv_cfg=self.conv_cfg,
-                norm_cfg=self.norm_cfg,
-                act_cfg=self.act_cfg)
-            bottleneck_modules.append(bottleneck)
+                bottleneck = ConvModule(
+                    self.in_channels[layer_idx],
+                    self.channels,
+                    1,
+                    conv_cfg=self.conv_cfg,
+                    norm_cfg=self.norm_cfg,
+                    act_cfg=self.act_cfg)
+                bottleneck_modules.append(bottleneck)
 
         return fe_modules, bottleneck_modules
