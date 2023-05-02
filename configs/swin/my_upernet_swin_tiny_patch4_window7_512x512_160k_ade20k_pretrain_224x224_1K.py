@@ -18,8 +18,9 @@ model = dict(
         window_size=7,
         use_abs_pos_embed=False,
         drop_path_rate=0.3,
+        attn_drop_rate=0.2,
         patch_norm=True),
-    decode_head=dict(in_channels=[96, 192, 384, 768], num_classes=NUM_CLASSES,
+    decode_head=dict(in_channels=[96, 192, 384, 768], num_classes=NUM_CLASSES, dropout_ratio=0.2,
                      # TODO 此处添加配置信息msc_module_cfg
                      # msc_module_cfg=[
                      #     dict(type='PPM', layer_idx=0), dict(type='PPM', layer_idx=1),
@@ -40,25 +41,35 @@ optimizer = dict(
      lr=0.00006,
      betas=(0.9, 0.999),
      weight_decay=0.01,
-     paramwise_cfg=dict(
-         custom_keys={
-             'absolute_pos_embed': dict(decay_mult=0.),
-             'relative_position_bias_table': dict(decay_mult=0.),
-             'norm': dict(decay_mult=0.),
-             'head': dict(lr_mult=10.)
-         }))
+     )
+optim_wrapper = dict(
+    # 优化器包装器(Optimizer wrapper)为更新参数提供了一个公共接口
+    type='AmpOptimWrapper',
+    # 用于更新模型参数的优化器(Optimizer)
+    optimizer=optimizer,
+    # 如果 'clip_grad' 不是None，它将是 ' torch.nn.utils.clip_grad' 的参数。
+    clip_grad=None,
+    paramwise_cfg=dict(
+        custom_keys={
+            'absolute_pos_embed': dict(decay_mult=0.),
+            'relative_position_bias_table': dict(decay_mult=0.),
+            'norm': dict(decay_mult=0.),
+            'head': dict(lr_mult=10.)
+        })
+)
+
 param_scheduler = [
     dict(
         type='LinearLR',
         start_factor=1e-6,
         by_epoch=True,
         begin=0,
-        end=10),
+        end=50),
     dict(
         type='PolyLR',
         power=1.0,
-        begin=10,
-        end=50,
+        begin=50,
+        end=100,
         eta_min=0.0,
         by_epoch=True,
     )
