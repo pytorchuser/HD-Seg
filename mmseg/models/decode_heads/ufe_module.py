@@ -266,6 +266,7 @@ class UFE(BaseModule):
             in_channels = base_channels * 2**i
 
     def forward(self, x):
+        x = self.adap_padding(x)
         self._check_input_divisible(x)
         enc_outs = []
         for enc in self.encoder:
@@ -290,7 +291,6 @@ class UFE(BaseModule):
                     m.eval()
 
     def _check_input_divisible(self, x):
-        x = self.adap_padding(x)
         h, w = x.shape[-2:]
         whole_downsample_rate = self.whole_downsample_rate
         assert (h % whole_downsample_rate == 0) \
