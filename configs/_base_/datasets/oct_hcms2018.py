@@ -1,7 +1,8 @@
 # dataset settings
 dataset_type = 'OCTHCMS2018Dataset'
 data_root = '../data/OCT_Manual_Delineations-2018_June_29(HCMS)/org/new'
-img_scale = (1024, 512)
+img_scale = (1024, 496)
+# img_scale = (1024, 512)
 crop_size = (512, 512)
 # img_scale = (1024, 128)
 # crop_size = (128, 128)
