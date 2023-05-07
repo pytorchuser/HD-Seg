@@ -8,10 +8,12 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-JSON_LOGS_DIR = 'tools/output/train/drive_unet_AdamW/20221124_160634.log.json'
+JSON_LOGS_DIR = ['../output/train/oct_T_8_lr_pre_atdr&ddr=0.2_Linear=15_Step_hcms2018_epoch100_1x/'
+                 '20230507_105734/vis_data/20230507_105734.json']
 # METRIC_KEYS：想绘制的参数名称
-METRIC_KEYS = 'decode.acc_seg'
-
+METRIC_KEYS = ['mDice']
+# METRIC_KEYS = ['lr']
+# METRIC_KEYS = ['loss']
 
 def plot_curve(log_dicts, args):
     if args.backend is not None:

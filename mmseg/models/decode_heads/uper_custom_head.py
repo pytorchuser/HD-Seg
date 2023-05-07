@@ -28,7 +28,7 @@ class UPerCustomHead(BaseDecodeHead):
         super(UPerCustomHead, self).__init__(
             input_transform='multiple_select', **kwargs)
         self.t = time.time()
-        self.logger = MMLogger.get_instance('loggerUPerCustomHead')
+        # self.logger = MMLogger.get_instance('loggerUPerCustomHead')
         # PSP Module
         # 读取配置文件的参数，初始化PPM或其他(UFE)处理模型列表
         # 初始化对应的bottleneck卷积模型列表
