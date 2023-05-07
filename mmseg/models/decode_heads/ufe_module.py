@@ -6,7 +6,7 @@ import torch.utils.checkpoint as cp
 from mmengine.utils.dl_utils.parrots_wrapper import _BatchNorm
 from mmcv.cnn import ConvModule
 
-from ..utils import UpConvBlock, Upsample
+from ..utils import UpConvBlock, AdaptivePadding
 
 
 class BasicConvBlock(nn.Module):
@@ -216,6 +216,15 @@ class UFE(BaseModule):
         self.encoder = nn.ModuleList()
         self.decoder = nn.ModuleList()
 
+        whole_downsample_rate = 1
+        for i in range(1, self.num_stages):
+            if self.strides[i] == 2 or self.downsamples[i - 1]:
+                whole_downsample_rate *= 2
+        self.whole_downsample_rate = whole_downsample_rate
+        self.adap_padding = AdaptivePadding(
+            kernel_size=self.whole_downsample_rate,
+            stride=self.whole_downsample_rate)
+
         # 根据num_stages数量，循环生成stage
         for i in range(num_stages):
             enc_conv_block = []
@@ -281,11 +290,9 @@ class UFE(BaseModule):
                     m.eval()
 
     def _check_input_divisible(self, x):
+        x = self.adap_padding(x)
         h, w = x.shape[-2:]
-        whole_downsample_rate = 1
-        for i in range(1, self.num_stages):
-            if self.strides[i] == 2 or self.downsamples[i - 1]:
-                whole_downsample_rate *= 2
+        whole_downsample_rate = self.whole_downsample_rate
         assert (h % whole_downsample_rate == 0) \
                and (w % whole_downsample_rate == 0), \
             f'The input image size {(h, w)} should be divisible by the whole ' \
