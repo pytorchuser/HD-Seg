@@ -107,7 +107,7 @@ param_scheduler = [
         param_name='lr',
         step_size=7,
         begin=15,
-        end=100,
+        end=50,
         gamma=0.8,
         by_epoch=True)
     # dict(

@@ -14,6 +14,7 @@ train_pipeline = [
         scale=img_scale,
         ratio_range=(0.5, 2.0),
         keep_ratio=False),
+    # dict(type='Pad', size=(1024, 512), padding_mode='edge'),
     dict(type='RandomCrop', crop_size=crop_size, cat_max_ratio=0.75),
     dict(type='RandomFlip', prob=0.5),
     dict(type='PhotoMetricDistortion'),
@@ -24,6 +25,7 @@ test_pipeline = [
     dict(type='Resize', scale=img_scale, keep_ratio=False),
     # add loading annotation after ``Resize`` because ground truth
     # does not need to do resize data transform
+    # dict(type='Pad', size=(1024, 512), padding_mode='edge'),
     dict(type='LoadAnnotations', reduce_zero_label=False),
     dict(type='PackSegInputs')
 ]
@@ -70,5 +72,5 @@ val_dataloader = dict(
         pipeline=test_pipeline))
 test_dataloader = val_dataloader
 
-val_evaluator = dict(type='IoUMetric', iou_metrics=['mDice', 'mIoU'])
+val_evaluator = dict(type='IoUMetric', iou_metrics=['mDice', 'mIoU'], output_dir='')
 test_evaluator = val_evaluator

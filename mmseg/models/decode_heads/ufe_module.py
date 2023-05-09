@@ -5,8 +5,7 @@ from mmengine.model import BaseModule
 import torch.utils.checkpoint as cp
 from mmengine.utils.dl_utils.parrots_wrapper import _BatchNorm
 from mmcv.cnn import ConvModule
-
-from ..utils import UpConvBlock, AdaptivePadding
+from ..utils import UpConvBlock, Upsample
 
 
 class BasicConvBlock(nn.Module):
@@ -216,14 +215,6 @@ class UFE(BaseModule):
         self.encoder = nn.ModuleList()
         self.decoder = nn.ModuleList()
 
-        whole_downsample_rate = 1
-        for i in range(1, self.num_stages):
-            if self.strides[i] == 2 or self.downsamples[i - 1]:
-                whole_downsample_rate *= 2
-        self.whole_downsample_rate = whole_downsample_rate
-        self.adap_padding = AdaptivePadding(
-            kernel_size=self.whole_downsample_rate,
-            stride=self.whole_downsample_rate)
 
         # 根据num_stages数量，循环生成stage
         for i in range(num_stages):
@@ -266,7 +257,6 @@ class UFE(BaseModule):
             in_channels = base_channels * 2**i
 
     def forward(self, x):
-        x = self.adap_padding(x)
         self._check_input_divisible(x)
         enc_outs = []
         for enc in self.encoder:
@@ -292,7 +282,10 @@ class UFE(BaseModule):
 
     def _check_input_divisible(self, x):
         h, w = x.shape[-2:]
-        whole_downsample_rate = self.whole_downsample_rate
+        whole_downsample_rate = 1
+        for i in range(1, self.num_stages):
+            if self.strides[i] == 2 or self.downsamples[i - 1]:
+                whole_downsample_rate *= 2
         assert (h % whole_downsample_rate == 0) \
                and (w % whole_downsample_rate == 0), \
             f'The input image size {(h, w)} should be divisible by the whole ' \
