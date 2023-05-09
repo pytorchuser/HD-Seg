@@ -24,7 +24,10 @@ model = dict(
     pretrained=None,
     backbone=dict(
         # 主干网络的类别，更多细节请参考 mmseg/models/backbones/swin.py
-        type='SwinTransformer',
+        # type='SwinTransformer',
+        type='SIMSwinTransformer',
+        # 是否使用sim模块
+        is_sim=True,
         # 预训练时输入图像的大小，默认224
         pretrain_img_size=224,
         # 特征维度，默认96

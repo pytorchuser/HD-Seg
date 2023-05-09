@@ -453,11 +453,12 @@ class SwinBlockSequence(BaseModule):
         if is_sim:
             self.sim = SimBlock(embed_dims=embed_dims)
         self.downsample = downsample
+        self.is_sim = is_sim
 
     def forward(self, x, hw_shape):
         if self.is_sim:
             sim_out = self.sim(x, hw_shape)
-            for i, block in self.blocks:
+            for i, block in enumerate(self.blocks):
                 # 0 sim,block
                 # 1 block, s+b
                 if i % 2 == 0:
