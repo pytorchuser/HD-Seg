@@ -69,7 +69,7 @@ def main():
                 elif mode == 'top_center':
                     y1, x1, y2, x2 = 0, max(0, int(round((w - crop_w) / 2.))), crop_h, min(w, x1 + crop_w) - 1
                 bboxes = np.array([x1, y1, x2, y2])
-                new_img = mmcv.imcrop(img, bboxes)
+                new_img = mmcv.imcrop(img[:, :, 0], bboxes)
                 mmcv.imwrite(new_img, out_path)
 
 
