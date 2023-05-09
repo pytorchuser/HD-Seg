@@ -2,7 +2,8 @@ _base_ = [
     '../_base_/models/upernet_custom_swin.py', '../_base_/datasets/oct_hcms2018.py',
     '../_base_/default_runtime.py', '../_base_/schedules/schedule_epoch.py'
 ]
-load_from = '../pth/upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210531_112542-e380ad3e.pth'  # noqa
+# load_from = '../pth/upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210531_112542-e380ad3e.pth'  # noqa
+load_from = '../pth/oct_T_8_lr_h_atdr&ddr=0.2_keep_ratio=False_octhcms2018org_epoch100_ppm_1(3)_epoch_82.pth'  # noqa
 NUM_CLASSES = 9
 
 data_preprocessor = dict(size=(512, 512))
@@ -27,30 +28,30 @@ model = dict(
                      #     dict(type='PPM', layer_idx=0), dict(type='PPM', layer_idx=1),
                      #     dict(type='PPM', layer_idx=2), dict(type='PPM', layer_idx=3)]
                      msc_module_cfg=[
-                        # dict(type='UFE', layer_idx=0, ufe_cfg=dict(
-                        #     num_stages=4,
-                        #     strides=(1, 1, 1, 1),
-                        #     enc_num_convs=(1, 1, 1, 1),
-                        #     dec_num_convs=(1, 1, 1),
-                        #     downsamples=(True, True, True),
-                        #     enc_dilations=(1, 1, 1, 1),
-                        #     dec_dilations=(1, 1, 1),)),
-                        # dict(type='UFE', layer_idx=1, ufe_cfg=dict(
-                        #     num_stages=3,
-                        #     strides=(1, 1, 1),
-                        #     enc_num_convs=(1, 1, 1),
-                        #     dec_num_convs=(1, 1),
-                        #     downsamples=(True, True),
-                        #     enc_dilations=(1, 1, 1),
-                        #     dec_dilations=(1, 1),)),
-                        # dict(type='UFE', layer_idx=2, ufe_cfg=dict(
-                        #     num_stages=2,
-                        #     strides=(1, 1),
-                        #     enc_num_convs=(1, 1),
-                        #     dec_num_convs=([1]),
-                        #     downsamples=([True]),
-                        #     enc_dilations=(1, 1),
-                        #     dec_dilations=([1]),)),
+                        dict(type='UFE', layer_idx=0, ufe_cfg=dict(
+                            num_stages=4,
+                            strides=(1, 1, 1, 1),
+                            enc_num_convs=(1, 1, 1, 1),
+                            dec_num_convs=(1, 1, 1),
+                            downsamples=(True, True, True),
+                            enc_dilations=(1, 1, 1, 1),
+                            dec_dilations=(1, 1, 1),)),
+                        dict(type='UFE', layer_idx=1, ufe_cfg=dict(
+                            num_stages=3,
+                            strides=(1, 1, 1),
+                            enc_num_convs=(1, 1, 1),
+                            dec_num_convs=(1, 1),
+                            downsamples=(True, True),
+                            enc_dilations=(1, 1, 1),
+                            dec_dilations=(1, 1),)),
+                        dict(type='UFE', layer_idx=2, ufe_cfg=dict(
+                            num_stages=2,
+                            strides=(1, 1),
+                            enc_num_convs=(1, 1),
+                            dec_num_convs=([1]),
+                            downsamples=([True]),
+                            enc_dilations=(1, 1),
+                            dec_dilations=([1]),)),
                         dict(type='PPM', layer_idx=3)
                      ]
                      # msc_module_cfg=[

@@ -1,6 +1,6 @@
 # dataset settings
 dataset_type = 'OCTHCMS2018Dataset'
-# data_root = '../data/OCT_Manual_Delineations-2018_June_29(HCMS)/flatten/new'
+# data_root = '../data/OCT_Manual_Delineations-2018_June_29(HCMS)/org/new'
 data_root = '../data/OCT_Manual_Delineations-2018_June_29(HCMS)/pad'
 img_scale = (1024, 512)
 crop_size = (512, 512)
