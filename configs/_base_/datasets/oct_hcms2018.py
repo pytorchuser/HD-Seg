@@ -1,11 +1,11 @@
 # dataset settings
 dataset_type = 'OCTHCMS2018Dataset'
-data_root = '../data/OCT_Manual_Delineations-2018_June_29(HCMS)/flatten/new'
-# data_root = '../data/OCT_Manual_Delineations-2018_June_29(HCMS)/cropped'
-# img_scale = (1024, 496)
-# crop_size = (256, 256)
-img_scale = (1024, 128)
-crop_size = (128, 128)
+# data_root = '../data/OCT_Manual_Delineations-2018_June_29(HCMS)/flatten/new'
+data_root = '../data/OCT_Manual_Delineations-2018_June_29(HCMS)/pad'
+img_scale = (1024, 512)
+crop_size = (512, 512)
+# img_scale = (1024, 128)
+# crop_size = (128, 128)
 train_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(type='LoadAnnotations',  reduce_zero_label=False),
