@@ -60,13 +60,15 @@ def main():
                 new_h, new_w = args.pad_size
                 pad_val = args.pad_val
                 if new_h < h or new_w < w or pad_val is None:
+                    print(file_path)
                     continue
-                padded_img = mmcv.impad(
-                    img,
-                    shape=(new_h, new_w),
-                    pad_val=pad_val,
-                    padding_mode=args.pad_mode)
-                mmcv.imwrite(padded_img, out_path)
+                else:
+                    padded_img = mmcv.impad(
+                        img[:, :, 0],
+                        shape=(new_h, new_w),
+                        pad_val=pad_val,
+                        padding_mode=args.pad_mode)
+                    mmcv.imwrite(padded_img, out_path)
     print('Done!')
 
 
