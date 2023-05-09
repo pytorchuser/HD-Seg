@@ -7,10 +7,10 @@ import numpy as np
 import mmcv
 from mmengine.utils import mkdir_or_exist
 
-BASE_DIR = '../../data/Duke_OCT_dataset2015_BOE_Chiu'
+BASE_DIR = '../../data/OCT_Manual_Delineations-2018_June_29(HCMS)/org'
 IN_DIR = BASE_DIR + '/new'
 OUT_DIR = BASE_DIR + '/cropped'
-SIZE = (256, 512)  # img(h,w)
+SIZE = (256, 1024)  # img(h,w)
 MODE = 'top_left'
 
 

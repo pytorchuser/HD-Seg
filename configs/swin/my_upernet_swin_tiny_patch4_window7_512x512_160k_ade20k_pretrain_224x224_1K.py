@@ -5,8 +5,7 @@ _base_ = [
 load_from = '../pth/upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210531_112542-e380ad3e.pth'  # noqa
 NUM_CLASSES = 9
 
-crop_size = (512, 512)
-data_preprocessor = dict(size=crop_size)
+data_preprocessor = dict(size=(512, 512))
 
 model = dict(
     data_preprocessor=data_preprocessor,
