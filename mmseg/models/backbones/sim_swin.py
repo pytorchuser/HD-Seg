@@ -3,11 +3,11 @@ import warnings
 from collections import OrderedDict
 from copy import deepcopy
 
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.checkpoint as cp
+from SoftPool import SoftPool2d
 from mmcv.cnn import build_norm_layer, build_conv_layer, build_activation_layer
 from mmcv.cnn.bricks.transformer import FFN, build_dropout
 from mmengine.logging import print_log
@@ -19,6 +19,89 @@ from mmengine.utils import to_2tuple
 
 from mmseg.registry import MODELS
 from ..utils.embed import PatchEmbed, PatchMerging
+
+
+class FCMLayer(BaseModule):
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 conv_type='Conv2d',
+                 act_cfg=None,
+                 init_cfg=None):
+        super().__init__(init_cfg=init_cfg)
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        if act_cfg is None:
+            act_cfg = dict(type='GELU')
+        # 归一化
+        self.batchNorm = nn.BatchNorm2d(out_channels)
+        # 激活函数
+        self.act_layer = build_activation_layer(act_cfg)
+        self.stage1 = nn.Sequential(
+            # softPool
+            SoftPool2d(kernel_size=(2, 2), stride=(2, 2)),
+            # 组归一化
+            nn.GroupNorm(in_channels // 2, in_channels),
+            # 1*1卷积
+            build_conv_layer(
+                dict(type=conv_type),
+                in_channels=in_channels,
+                out_channels=out_channels,
+                kernel_size=1,
+                stride=1),
+            self.batchNorm,
+            self.act_layer
+        )
+        self.stage2 = nn.Sequential(
+            # 1*1卷积
+            build_conv_layer(
+                dict(type=conv_type),
+                in_channels=in_channels,
+                out_channels=out_channels,
+                kernel_size=1,
+                stride=1),
+            self.batchNorm,
+            self.act_layer,
+            # 3*3卷积
+            build_conv_layer(
+                dict(type=conv_type),
+                in_channels=out_channels,
+                out_channels=out_channels,
+                kernel_size=3,
+                stride=1,
+                dilation=2,
+                padding=2),
+            self.batchNorm,
+            # 1*1卷积
+            build_conv_layer(
+                dict(type=conv_type),
+                in_channels=out_channels,
+                out_channels=out_channels,
+                kernel_size=1,
+                stride=2),
+            self.batchNorm,
+            self.act_layer,
+        )
+
+    def forward(self, x, hw_shape):
+        H, W = hw_shape
+        B, L, C = x.shape  # ([12, 4096, 96])
+
+        assert L == H * W, "input feature has wrong size"
+        assert H % 2 == 0 and W % 2 == 0, f"x size ({H}*{W}) are not even."
+        x = x.view(B, H, W, C)  # ([12, 64, 64, 384])
+        x = x.view(B, C, H, W)
+        soft_x = x
+        # softPool 分支
+        soft_x = self.stage1(soft_x)
+        # 长分支
+        x = self.stage2(x)
+        # 相加
+        x = x + soft_x
+        # reshape
+        x = x.view(B, -1, 2 * C)  # B H/2*W/2 4*C
+
+        return x, (H // 2, W // 2)
 
 
 class WindowMSA(BaseModule):
@@ -628,7 +711,8 @@ class SIMSwinTransformer(BaseModule):
                  pretrained=None,
                  frozen_stages=-1,
                  init_cfg=None,
-                 is_sim=True):
+                 is_sim=True,
+                 is_fcm=True):
         self.frozen_stages = frozen_stages
 
         if isinstance(pretrain_img_size, int):
@@ -687,14 +771,19 @@ class SIMSwinTransformer(BaseModule):
         self.stages = ModuleList()
         in_channels = embed_dims
         for i in range(num_layers):
-            # TODO 此处需添加FCM
             if i < num_layers - 1:
-                downsample = PatchMerging(
-                    in_channels=in_channels,
-                    out_channels=2 * in_channels,
-                    stride=strides[i + 1],
-                    norm_cfg=norm_cfg if patch_norm else None,
-                    init_cfg=None)
+                if is_fcm:
+                    downsample = FCMLayer(
+                        in_channels=in_channels,
+                        out_channels=2 * in_channels,
+                    )
+                else:
+                    downsample = PatchMerging(
+                        in_channels=in_channels,
+                        out_channels=2 * in_channels,
+                        stride=strides[i + 1],
+                        norm_cfg=norm_cfg if patch_norm else None,
+                        init_cfg=None)
             else:
                 downsample = None
 
