@@ -8,8 +8,8 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-JSON_LOGS_DIR = ['../output/train/oct_T_8_lr_pre_atdr&ddr=0.2_Linear=15_Step_hcms2018_resize512_epoch100_1x/'
-                 '20230507_150628/vis_data/20230507_150628.json']
+JSON_LOGS_DIR = ['../output/train/oct_T_88_2.5lr_pre_ufe_atdr=0.3&ddr=0.2_Linear10_Step10_hcms2018_pad512_epoch100_1x/'
+                 '20230513_183534/vis_data/20230513_183534.json']
 # METRIC_KEYS：想绘制的参数名称
 # METRIC_KEYS = ['mDice']
 # METRIC_KEYS = ['lr']

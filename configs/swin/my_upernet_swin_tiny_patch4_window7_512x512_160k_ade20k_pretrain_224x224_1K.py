@@ -2,8 +2,8 @@ _base_ = [
     '../_base_/models/upernet_custom_swin.py', '../_base_/datasets/oct_hcms2018.py',
     '../_base_/default_runtime.py', '../_base_/schedules/schedule_epoch.py'
 ]
-# load_from = '../pth/upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210531_112542-e380ad3e.pth'  # noqa
-load_from = '../pth/oct_T_8_lr_h_atdr&ddr=0.2_keep_ratio=False_octhcms2018org_epoch100_ppm_1(3)_epoch_82.pth'  # noqa
+load_from = '../pth/upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210531_112542-e380ad3e.pth'  # noqa
+# load_from = '../pth/oct_T_8_lr_h_atdr&ddr=0.2_keep_ratio=False_octhcms2018org_epoch100_ppm_1(3)_epoch_82.pth'  # noqa
 NUM_CLASSES = 9
 
 data_preprocessor = dict(size=(512, 512))
@@ -20,7 +20,7 @@ model = dict(
         qk_scale=True,
         use_abs_pos_embed=False,
         drop_path_rate=0.3,
-        attn_drop_rate=0.2,
+        attn_drop_rate=0.3,
         patch_norm=True),
     decode_head=dict(in_channels=[96, 192, 384, 768], num_classes=NUM_CLASSES, dropout_ratio=0.2,
                      # TODO 此处添加配置信息msc_module_cfg
@@ -66,7 +66,7 @@ model = dict(
 optimizer = dict(
      _delete_=True,
      type='AdamW',
-     lr=0.00006,
+     lr=0.00018,
      betas=(0.9, 0.999),
      weight_decay=0.01,
      )
@@ -93,7 +93,7 @@ param_scheduler = [
         end_factor=1,
         by_epoch=True,
         begin=0,
-        end=15),
+        end=10),
     # dict(
     #     type='PolyParamScheduler',
     #     param_name='lr',
@@ -106,8 +106,8 @@ param_scheduler = [
         type='StepParamScheduler',
         param_name='lr',
         step_size=7,
-        begin=15,
-        end=50,
+        begin=10,
+        end=100,
         gamma=0.8,
         by_epoch=True)
     # dict(
@@ -115,9 +115,9 @@ param_scheduler = [
     #     # 需要调整的参数名称，如lr、momentum等。
     #     param_name='lr',
     #     eta_min=1e-7,
-    #     T_max=5,
+    #     T_max=40,
     #     by_epoch=True,
-    #     begin=15,
+    #     begin=10,
     #     end=50,
     #     # 是否为每次更新打印值。默认为False。
     #     verbose=False)
@@ -145,7 +145,7 @@ param_scheduler = [
     #     # 在less规则中，当monitor停止减少时，参数将减少;在greater规则下，当monitor停止增加时，参数将将减少。
     #     rule='greater',
     #     # factor是每次学习率下降的比例，新的学习率等于老的学习率乘以factor。
-    #     factor=0.1,
+    #     factor=0.5,
     #     # patience是能够容忍的次数，当patience次后，网络性能仍未提升，则会降低学习率。
     #     patience=5,
     #     # threshold是测量新的最优的阈值，一般只关注相对大的性能提升。
@@ -160,7 +160,7 @@ param_scheduler = [
     #     min_value=0,
     #     # eps指最小的学习率变化，当新旧学习率差别小于eps时，维持学习率不变。
     #     eps=1e-8,
-    #     begin=20,
+    #     begin=10,
     #     end=50,
     #     by_epoch=True,
     #     # 是否为每次更新打印值。默认为False。
@@ -173,7 +173,7 @@ train_dataloader = dict(
     batch_size=8
 )
 val_dataloader = dict(
-    batch_size=1,
+    batch_size=8,
     num_workers=1,
     sampler=dict(
         type='DefaultSampler',
@@ -181,7 +181,7 @@ val_dataloader = dict(
         shuffle=True)
 )
 test_dataloader = dict(
-    batch_size=1,
+    batch_size=8,
     num_workers=1,
     sampler=dict(
         type='DefaultSampler',
