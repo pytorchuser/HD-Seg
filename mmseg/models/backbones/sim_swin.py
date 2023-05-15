@@ -18,6 +18,7 @@ from mmengine.runner import CheckpointLoader
 from mmengine.utils import to_2tuple
 
 from mmseg.registry import MODELS
+from ..backbones.resnet_ram import ResNetRam
 from ..utils.embed import PatchEmbed, PatchMerging
 
 
@@ -712,7 +713,8 @@ class SIMSwinTransformer(BaseModule):
                  frozen_stages=-1,
                  init_cfg=None,
                  is_sim=True,
-                 is_fcm=True):
+                 is_fcm=True,
+                 is_res=True):
         self.frozen_stages = frozen_stages
 
         if isinstance(pretrain_img_size, int):
@@ -815,6 +817,16 @@ class SIMSwinTransformer(BaseModule):
             layer = build_norm_layer(norm_cfg, self.num_features[i])[1]
             layer_name = f'norm{i}'
             self.add_module(layer_name, layer)
+        # 初始化resnet + ram
+        if is_res:
+            self.resnet_ram = ResNetRam(
+                depth=50,
+                swin_channels=96,
+                stem_channels=128,
+                base_channels=128,
+                is_ram=True
+            )
+        self.is_res = is_res
 
     def train(self, mode=True):
         """Convert the model into training mode while keep layers freezed."""
@@ -917,6 +929,9 @@ class SIMSwinTransformer(BaseModule):
             self.load_state_dict(state_dict, strict=False)
 
     def forward(self, x):
+        # 先保留一下最初的input
+        org_x = x
+        # 走swin
         x, hw_shape = self.patch_embed(x)
 
         if self.use_abs_pos_embed:
@@ -933,5 +948,7 @@ class SIMSwinTransformer(BaseModule):
                                self.num_features[i]).permute(0, 3, 1,
                                                              2).contiguous()
                 outs.append(out)
-
+        # 用swin结果走resnet+ram
+        if self.is_res:
+            outs = self.resnet_ram(org_x, outs)
         return outs
