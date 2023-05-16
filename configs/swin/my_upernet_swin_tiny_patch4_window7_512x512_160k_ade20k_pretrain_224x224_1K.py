@@ -23,6 +23,8 @@ model = dict(
         attn_drop_rate=0.3,
         patch_norm=True),
     decode_head=dict(in_channels=[96, 192, 384, 768], num_classes=NUM_CLASSES, dropout_ratio=0.2,
+                     loss_decode=[dict(type='CrossEntropyLoss', loss_name='loss_ce', loss_weight=1.0),
+                     dict(type='DiceLoss', loss_name='loss_dice', loss_weight=3.0)],
                      # TODO 此处添加配置信息msc_module_cfg
                      # msc_module_cfg=[
                      #     dict(type='PPM', layer_idx=0), dict(type='PPM', layer_idx=1),
@@ -70,6 +72,17 @@ optimizer = dict(
      betas=(0.9, 0.999),
      weight_decay=0.01,
      )
+
+# optimizer = dict(
+#     # 优化器种类，更多细节可参考 https://github.com/open-mmlab/mmengine/blob/main/mmengine/optim/optimizer/default_constructor.py
+#     type='SGD',
+#     # 优化器的学习率，参数的使用细节请参照对应的 PyTorch 文档
+#     lr=0.01,
+#     # 动量大小 (Momentum)
+#     momentum=0.9,
+#     # SGD 的权重衰减 (weight decay)
+#     weight_decay=0.0005)
+
 optim_wrapper = dict(
     # 优化器包装器(Optimizer wrapper)为更新参数提供了一个公共接口
     type='AmpOptimWrapper',
@@ -78,6 +91,8 @@ optim_wrapper = dict(
     # 如果 'clip_grad' 不是None，它将是 ' torch.nn.utils.clip_grad' 的参数。
     clip_grad=None,
     paramwise_cfg=dict(
+        # 优化器配置去重
+        bypass_duplicate=True,
         custom_keys={
             'absolute_pos_embed': dict(decay_mult=0.),
             'relative_position_bias_table': dict(decay_mult=0.),
