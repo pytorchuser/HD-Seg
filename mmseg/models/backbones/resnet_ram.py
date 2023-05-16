@@ -90,7 +90,7 @@ class RamLayer(BaseModule):
             build_activation_layer(act_cfg)
         )
         self.s_fuse = ChannelAtt(gate_channels=out_channel, reduction_ratio=2, pool_types=['avg', 'max'])
-        self.ram_dcn = DeformConv2dPack(out_channel, out_channel, kernel_size=(3, 3), stride=(1, 1), padding=0)
+        self.ram_dcn = DeformConv2dPack(out_channel, out_channel, kernel_size=(3, 3), stride=(1, 1), padding=1)
 
     def forward(self, x, net_out):
         # resnet对应stage输出做1*1卷积，改变管道数
@@ -195,8 +195,8 @@ class ResNetRam(BaseModule):
                  depth,
                  swin_channels=96,
                  in_channels=3,
-                 stem_channels=128,
-                 base_channels=128,
+                 stem_channels=32,
+                 base_channels=32,
                  num_stages=4,
                  strides=(1, 2, 2, 2),
                  dilations=(1, 1, 1, 1),
@@ -326,7 +326,7 @@ class ResNetRam(BaseModule):
             swin_channels = swin_channels * 2**i
             if is_ram:
                 ram_layer = RamLayer(
-                    in_channel=planes,
+                    in_channel=planes * 4,
                     out_channel=swin_channels)
                 self.ram_layers.append(ram_layer)
             self.inplanes = planes * self.block.expansion
