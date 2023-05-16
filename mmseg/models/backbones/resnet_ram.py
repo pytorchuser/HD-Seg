@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from mmcv.cnn import build_conv_layer, build_norm_layer, build_activation_layer
 from mmcv.ops import DeformConv2dPack
-from mmengine.model import BaseModule
+from mmengine.model import BaseModule, ModuleList
 from mmengine.utils.dl_utils.parrots_wrapper import _BatchNorm
 from SoftPool import SoftPool2d
 
@@ -71,12 +71,14 @@ class RamLayer(BaseModule):
     def __init__(self,
                  in_channel,
                  out_channel,
+                 is_swin_ram=False,
                  init_cfg=None,
                  act_cfg=None,
                  conv_type='Conv2d'):
         super().__init__(init_cfg)
         if act_cfg is None:
             act_cfg = dict(type='ReLU')
+        self.is_swin_ram = is_swin_ram
         # RAM初始化
         self.s_conv = nn.Sequential(
             # 1*1卷积
@@ -93,16 +95,28 @@ class RamLayer(BaseModule):
         self.ram_dcn = DeformConv2dPack(out_channel, out_channel, kernel_size=(3, 3), stride=(1, 1), padding=1)
 
     def forward(self, x, net_out):
-        # resnet对应stage输出做1*1卷积，改变管道数
-        x = self.s_conv(x)
-        # DCN 可变形卷积
-        x = self.ram_dcn(x)
-        # 这个熔断又是什么玩意，一堆函数操作
-        p = self.s_fuse(net_out)
-        # 将两个结果相乘
-        p = p * x
-        # 三部分相加
-        x = x + p + net_out
+        if self.is_swin_ram:
+            # swin是主网络
+            # 对swin做fuse
+            p = self.s_fuse(x)
+            # resnet对应stage输出做1*1卷积，改变管道数
+            net_out = self.s_conv(net_out)
+            # resnet做可变形卷积
+            net_out = self.ram_dcn(net_out)
+            p = p * net_out
+            x = x + p + net_out
+        else:
+            # res是主网络
+            # resnet对应stage输出做1*1卷积，改变管道数
+            x = self.s_conv(x)
+            # DCN 可变形卷积
+            x = self.ram_dcn(x)
+            # 对swin做fuse
+            p = self.s_fuse(net_out)
+            # 将两个结果相乘
+            p = p * x
+            # 三部分相加
+            x = x + p + net_out
         return x
 
 
@@ -289,7 +303,7 @@ class ResNetRam(BaseModule):
         self._make_stem_layer(in_channels, stem_channels)
 
         self.res_layers = []
-        self.ram_layers = nn.ModuleList()
+        self.ram_layers = ModuleList()
         for i, num_blocks in enumerate(self.stage_blocks):
             stride = strides[i]
             dilation = dilations[i]
@@ -463,7 +477,7 @@ class ResNetRam(BaseModule):
             for param in m.parameters():
                 param.requires_grad = False
 
-    def forward(self, x, swin_out):
+    def forward(self, x, swin_out=None):
         """Forward function."""
         if self.deep_stem:
             x = self.stem(x)
@@ -481,7 +495,8 @@ class ResNetRam(BaseModule):
             if self.is_ram:
                 # RAM流程
                 x = self.ram_layers[i](x, swin_out[i])
-            else:
+            elif swin_out:
+                # TODO swin和res channel数需统一，给swin加个1*1卷积
                 x = x + swin_out[i]
 
             if i in self.out_indices:
