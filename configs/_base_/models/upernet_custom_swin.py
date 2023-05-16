@@ -29,7 +29,9 @@ model = dict(
         # 是否使用sim模块
         is_sim=True,
         is_fcm=True,
-        is_res=True,
+        is_res=False,
+        is_res_ram=False,
+        is_swin_ram=True,
         # 预训练时输入图像的大小，默认224
         pretrain_img_size=224,
         # 特征维度，默认96

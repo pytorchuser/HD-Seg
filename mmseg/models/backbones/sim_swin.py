@@ -572,9 +572,17 @@ class SwinBlockSequence(BaseModule):
                 x = block(x, hw_shape)
 
         if self.is_swin_ram:
-            assert resnet_out, 'swin ram, 必须要有resnet_ram网络对应stage的输出'
+            assert resnet_out is not None, 'swin ram, 必须要有resnet_ram网络对应stage的输出'
+            H, W = hw_shape
+            B, L, C = x.shape  # ([12, 4096, 96])
+            assert L == H * W, "input feature has wrong size"
+            assert H % 2 == 0 and W % 2 == 0, f"x size ({H}*{W}) are not even."
+            x = x.view(B, H, W, C)  # ([12, 64, 64, 384])
+            x = x.view(B, C, H, W)
             # RAM流程
             x = self.ram_layer(x, resnet_out)
+            # 再变回3维矩阵
+            x = x.view(B, -1, C)
 
         if self.downsample:
             x_down, down_hw_shape = self.downsample(x, hw_shape)
@@ -792,8 +800,8 @@ class SIMSwinTransformer(BaseModule):
             x.item() for x in torch.linspace(0, drop_path_rate, total_depth)
         ]
         # 初始化resnet + ram 或 resnet
+        self.resent_channels = 32
         if is_res or is_swin_ram:
-            self.resent_channels = 32
             self.resnet_ram = ResNetRam(
                 depth=50,
                 swin_channels=96,
@@ -974,7 +982,10 @@ class SIMSwinTransformer(BaseModule):
 
         outs = []
         for i, stage in enumerate(self.stages):
-            x, hw_shape, out, out_hw_shape = stage(x, hw_shape, res_out[i])
+            if len(res_out) == len(self.stages):
+                x, hw_shape, out, out_hw_shape = stage(x, hw_shape, res_out[i])
+            else:
+                x, hw_shape, out, out_hw_shape = stage(x, hw_shape)
             if i in self.out_indices:
                 norm_layer = getattr(self, f'norm{i}')
                 out = norm_layer(out)
