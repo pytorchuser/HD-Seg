@@ -18,7 +18,7 @@ from mmengine.runner import CheckpointLoader
 from mmengine.utils import to_2tuple
 
 from mmseg.registry import MODELS
-from ..backbones.resnet_ram import ResNetRam
+from ..backbones.resnet_ram import ResNetRam, RamLayer
 from ..utils.embed import PatchEmbed, PatchMerging
 
 
@@ -504,10 +504,12 @@ class SwinBlockSequence(BaseModule):
                  drop_path_rate=0.,
                  downsample=None,
                  is_sim=True,
+                 is_swin_ram=True,
                  act_cfg=dict(type='GELU'),
                  norm_cfg=dict(type='LN'),
                  with_cp=False,
-                 init_cfg=None):
+                 init_cfg=None,
+                 resnet_channels=0):
         super().__init__(init_cfg=init_cfg)
 
         if isinstance(drop_path_rate, list):
@@ -536,10 +538,18 @@ class SwinBlockSequence(BaseModule):
             self.blocks.append(block)
         if is_sim:
             self.sim = SimBlock(embed_dims=embed_dims)
+            # 初始化swin内部的ram
+        if is_swin_ram:
+            # ram的in_channel应该与res的out_channel一致
+            self.ram_layer = RamLayer(
+                in_channel=resnet_channels,
+                out_channel=embed_dims,
+                is_swin_ram=is_swin_ram)
         self.downsample = downsample
         self.is_sim = is_sim
+        self.is_swin_ram = is_swin_ram
 
-    def forward(self, x, hw_shape):
+    def forward(self, x, hw_shape, resnet_out=None):
         if self.is_sim:
             sim_out = self.sim(x, hw_shape)
             for i, block in enumerate(self.blocks):
@@ -560,6 +570,12 @@ class SwinBlockSequence(BaseModule):
         else:
             for block in self.blocks:
                 x = block(x, hw_shape)
+
+        if self.is_swin_ram:
+            assert resnet_out, 'swin ram, 必须要有resnet_ram网络对应stage的输出'
+            # RAM流程
+            x = self.ram_layer(x, resnet_out)
+
         if self.downsample:
             x_down, down_hw_shape = self.downsample(x, hw_shape)
             return x_down, down_hw_shape, x, hw_shape
@@ -714,7 +730,9 @@ class SIMSwinTransformer(BaseModule):
                  init_cfg=None,
                  is_sim=True,
                  is_fcm=True,
-                 is_res=True):
+                 is_res=False,
+                 is_res_ram=False,
+                 is_swin_ram=True):
         self.frozen_stages = frozen_stages
 
         if isinstance(pretrain_img_size, int):
@@ -736,6 +754,10 @@ class SIMSwinTransformer(BaseModule):
             init_cfg = init_cfg
         else:
             raise TypeError('pretrained must be a str or None')
+        assert not (is_swin_ram and is_res), \
+            'is_swin_ram和is_res只能有一个为True：is_swin_ram时，swin是主网络；is_res时，resnet是主网络'
+        assert not (is_swin_ram and is_res_ram), \
+            'is_swin_ram和is_res_ram只能有一个为True, 不能同时在swin和res网络使用ram'
 
         super().__init__(init_cfg=init_cfg)
 
@@ -769,10 +791,23 @@ class SIMSwinTransformer(BaseModule):
         dpr = [
             x.item() for x in torch.linspace(0, drop_path_rate, total_depth)
         ]
-
+        # 初始化resnet + ram 或 resnet
+        if is_res or is_swin_ram:
+            self.resent_channels = 32
+            self.resnet_ram = ResNetRam(
+                depth=50,
+                swin_channels=96,
+                stem_channels=32,
+                base_channels=self.resent_channels,
+                is_ram=is_res_ram
+            )
+        self.is_res = is_res
+        self.is_swin_ram = is_swin_ram
+        # 初始化swin stages
         self.stages = ModuleList()
         in_channels = embed_dims
         for i in range(num_layers):
+            # 下采样
             if i < num_layers - 1:
                 if is_fcm:
                     downsample = FCMLayer(
@@ -789,6 +824,7 @@ class SIMSwinTransformer(BaseModule):
             else:
                 downsample = None
 
+            # swin stage
             stage = SwinBlockSequence(
                 embed_dims=in_channels,
                 num_heads=num_heads[i],
@@ -802,10 +838,12 @@ class SIMSwinTransformer(BaseModule):
                 drop_path_rate=dpr[sum(depths[:i]):sum(depths[:i + 1])],
                 downsample=downsample,
                 is_sim=is_sim,
+                is_swin_ram=is_swin_ram,
                 act_cfg=act_cfg,
                 norm_cfg=norm_cfg,
                 with_cp=with_cp,
-                init_cfg=None)
+                init_cfg=None,
+                resnet_channels=self.resent_channels * 4 * 2 ** i)
             self.stages.append(stage)
 
             if downsample:
@@ -817,16 +855,6 @@ class SIMSwinTransformer(BaseModule):
             layer = build_norm_layer(norm_cfg, self.num_features[i])[1]
             layer_name = f'norm{i}'
             self.add_module(layer_name, layer)
-        # 初始化resnet + ram
-        if is_res:
-            self.resnet_ram = ResNetRam(
-                depth=50,
-                swin_channels=96,
-                stem_channels=128,
-                base_channels=128,
-                is_ram=True
-            )
-        self.is_res = is_res
 
     def train(self, mode=True):
         """Convert the model into training mode while keep layers freezed."""
@@ -931,6 +959,12 @@ class SIMSwinTransformer(BaseModule):
     def forward(self, x):
         # 先保留一下最初的input
         org_x = x
+        # 要在swin内部走ram
+        res_out = []
+        if self.is_swin_ram:
+            # 先拿到resnet网络的输出
+            res_out = self.resnet_ram(x)
+
         # 走swin
         x, hw_shape = self.patch_embed(x)
 
@@ -940,7 +974,7 @@ class SIMSwinTransformer(BaseModule):
 
         outs = []
         for i, stage in enumerate(self.stages):
-            x, hw_shape, out, out_hw_shape = stage(x, hw_shape)
+            x, hw_shape, out, out_hw_shape = stage(x, hw_shape, res_out[i])
             if i in self.out_indices:
                 norm_layer = getattr(self, f'norm{i}')
                 out = norm_layer(out)
