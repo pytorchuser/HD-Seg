@@ -24,7 +24,7 @@ model = dict(
         patch_norm=True),
     decode_head=dict(in_channels=[96, 192, 384, 768], num_classes=NUM_CLASSES, dropout_ratio=0.2,
                      loss_decode=[dict(type='CrossEntropyLoss', loss_name='loss_ce', loss_weight=1.0),
-                     dict(type='DiceLoss', loss_name='loss_dice', loss_weight=3.0)],
+                     dict(type='DiceLoss', loss_name='loss_dice', loss_weight=1.0)],
                      # TODO 此处添加配置信息msc_module_cfg
                      # msc_module_cfg=[
                      #     dict(type='PPM', layer_idx=0), dict(type='PPM', layer_idx=1),
