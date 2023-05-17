@@ -72,6 +72,8 @@ class RamLayer(BaseModule):
                  in_channel,
                  out_channel,
                  is_swin_ram=False,
+                 is_res_ram=False,
+                 ram_simple=True,
                  init_cfg=None,
                  act_cfg=None,
                  conv_type='Conv2d'):
@@ -79,6 +81,8 @@ class RamLayer(BaseModule):
         if act_cfg is None:
             act_cfg = dict(type='ReLU')
         self.is_swin_ram = is_swin_ram
+        self.is_res_ram = is_res_ram
+        self.ram_simple = ram_simple
         # RAM初始化
         self.s_conv = nn.Sequential(
             # 1*1卷积
@@ -97,26 +101,34 @@ class RamLayer(BaseModule):
     def forward(self, x, net_out):
         if self.is_swin_ram:
             # swin是主网络
-            # 对swin做fuse
-            p = self.s_fuse(x)
             # resnet对应stage输出做1*1卷积，改变管道数
             net_out = self.s_conv(net_out)
-            # resnet做可变形卷积
-            net_out = self.ram_dcn(net_out)
-            p = p * net_out
-            x = x + p + net_out
-        else:
+            if self.ram_simple:
+                # TODO 验证'+'的效果
+                x = x + net_out
+            else:
+                # 对swin做fuse
+                p = self.s_fuse(x)
+                # resnet做可变形卷积
+                net_out = self.ram_dcn(net_out)
+                p = p * net_out
+                x = x + p + net_out
+        elif self.is_res_ram:
             # res是主网络
-            # resnet对应stage输出做1*1卷积，改变管道数
-            x = self.s_conv(x)
-            # DCN 可变形卷积
-            x = self.ram_dcn(x)
-            # 对swin做fuse
-            p = self.s_fuse(net_out)
-            # 将两个结果相乘
-            p = p * x
-            # 三部分相加
-            x = x + p + net_out
+            # swin对应stage输出做1*1卷积，改变管道数
+            net_out = self.s_conv(net_out)
+            if self.ram_simple:
+                # TODO 验证'+'的效果
+                x = x + net_out
+            else:
+                # DCN 可变形卷积
+                x = self.ram_dcn(x)
+                # 对swin做fuse
+                p = self.s_fuse(net_out)
+                # 将两个结果相乘
+                p = p * x
+                # 三部分相加
+                x = x + p + net_out
         return x
 
 
@@ -231,7 +243,8 @@ class ResNetRam(BaseModule):
                  zero_init_residual=True,
                  pretrained=None,
                  init_cfg=None,
-                 is_ram=False):
+                 is_res_ram=False,
+                 ram_simple=True):
         super().__init__(init_cfg)
         if norm_cfg is None:
             norm_cfg = dict(type='BN', requires_grad=True)
@@ -338,10 +351,12 @@ class ResNetRam(BaseModule):
             self.res_layers.append(layer_name)
             # ram layer初始化, in_channel与swin out_channel一致
             swin_channels = swin_channels * 2**i
-            if is_ram:
+            if is_res_ram:
                 ram_layer = RamLayer(
-                    in_channel=planes * 4,
-                    out_channel=swin_channels)
+                    in_channel=swin_channels,
+                    out_channel=planes * 4,
+                    is_res_ram=is_res_ram,
+                    ram_simple=ram_simple)
                 self.ram_layers.append(ram_layer)
             self.inplanes = planes * self.block.expansion
 
@@ -349,7 +364,7 @@ class ResNetRam(BaseModule):
 
         self.feat_dim = self.block.expansion * base_channels * 2**(
             len(self.stage_blocks) - 1)
-        self.is_ram = is_ram
+        self.is_res_ram = is_res_ram
 
     def make_stage_plugins(self, plugins, stage_idx):
         """make plugins for ResNet 'stage_idx'th stage .
@@ -488,16 +503,13 @@ class ResNetRam(BaseModule):
         x = self.maxpool(x)
         outs = []
         for i, layer_name in enumerate(self.res_layers):
-            # TODO 每一个resnet layer，后面跟一个ram layer
             res_layer = getattr(self, layer_name)
-            # ResNet
+            # ResNet stage
             x = res_layer(x)
-            if self.is_ram:
+            # 每一个resnet layer，后面跟一个ram layer
+            if self.is_res_ram:
                 # RAM流程
                 x = self.ram_layers[i](x, swin_out[i])
-            elif swin_out:
-                # TODO swin和res channel数需统一，给swin加个1*1卷积
-                x = x + swin_out[i]
 
             if i in self.out_indices:
                 outs.append(x)

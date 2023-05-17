@@ -738,9 +738,9 @@ class SIMSwinTransformer(BaseModule):
                  init_cfg=None,
                  is_sim=True,
                  is_fcm=True,
-                 is_res=False,
-                 is_res_ram=False,
-                 is_swin_ram=True):
+                 is_res_ram=False,  # 走res+ram，在ram中分两种情况，一种是结果直接相加，一种是复杂运算后相加
+                 is_swin_ram=True,
+                 ram_simple=True):  # 走swin为主网络的res+ram
         self.frozen_stages = frozen_stages
 
         if isinstance(pretrain_img_size, int):
@@ -762,8 +762,6 @@ class SIMSwinTransformer(BaseModule):
             init_cfg = init_cfg
         else:
             raise TypeError('pretrained must be a str or None')
-        assert not (is_swin_ram and is_res), \
-            'is_swin_ram和is_res只能有一个为True：is_swin_ram时，swin是主网络；is_res时，resnet是主网络'
         assert not (is_swin_ram and is_res_ram), \
             'is_swin_ram和is_res_ram只能有一个为True, 不能同时在swin和res网络使用ram'
 
@@ -801,15 +799,15 @@ class SIMSwinTransformer(BaseModule):
         ]
         # 初始化resnet + ram 或 resnet
         self.resent_channels = 32
-        if is_res or is_swin_ram:
+        if is_swin_ram or is_res_ram:
             self.resnet_ram = ResNetRam(
                 depth=50,
                 swin_channels=96,
                 stem_channels=32,
                 base_channels=self.resent_channels,
-                is_ram=is_res_ram
+                is_res_ram=is_res_ram,
+                ram_simple=ram_simple
             )
-        self.is_res = is_res
         self.is_swin_ram = is_swin_ram
         # 初始化swin stages
         self.stages = ModuleList()
@@ -994,6 +992,6 @@ class SIMSwinTransformer(BaseModule):
                                                              2).contiguous()
                 outs.append(out)
         # 用swin结果走resnet+ram
-        if self.is_res:
+        if self.is_res_ram:
             outs = self.resnet_ram(org_x, outs)
         return outs
