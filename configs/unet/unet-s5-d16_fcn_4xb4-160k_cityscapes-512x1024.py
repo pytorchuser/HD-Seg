@@ -16,6 +16,32 @@ model = dict(
     auxiliary_head=dict(num_classes=NUM_CLASSES)
 )
 
+# AdamW optimizer, no weight decay for position embedding & layer norm in backbone
+optimizer = dict(
+     _delete_=True,
+     type='AdamW',
+     lr=0.00018,
+     betas=(0.9, 0.999),
+     weight_decay=0.01,
+     )
+optim_wrapper = dict(
+    # 优化器包装器(Optimizer wrapper)为更新参数提供了一个公共接口
+    type='AmpOptimWrapper',
+    # 用于更新模型参数的优化器(Optimizer)
+    optimizer=optimizer,
+    # 如果 'clip_grad' 不是None，它将是 ' torch.nn.utils.clip_grad' 的参数。
+    clip_grad=None,
+    paramwise_cfg=dict(
+        # 优化器配置去重
+        bypass_duplicate=True,
+        custom_keys={
+            'absolute_pos_embed': dict(decay_mult=0.),
+            'relative_position_bias_table': dict(decay_mult=0.),
+            'norm': dict(decay_mult=0.),
+            'head': dict(lr_mult=10.)
+        })
+)
+
 param_scheduler = [
     dict(
         type='LinearLR',

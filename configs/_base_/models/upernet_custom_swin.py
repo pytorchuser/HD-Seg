@@ -1,7 +1,7 @@
 # model settings
 # 分割框架通常使用 SyncBN
 norm_cfg = dict(type='BN', requires_grad=True)
-backbone_norm_cfg = dict(type='LN', requires_grad=True)
+backbone_norm_cfg = dict(type='BN', requires_grad=True)
 # 数据预处理的配置项，通常包括图像的归一化和增强
 data_preprocessor = dict(
     # 数据预处理的类型
@@ -29,7 +29,7 @@ model = dict(
         # 是否使用sim模块
         is_sim=True,
         is_fcm=True,
-        is_res=True,
+        is_res=False,
         is_res_ram=False,
         is_swin_ram=False,
         # 预训练时输入图像的大小，默认224
