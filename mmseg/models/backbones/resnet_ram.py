@@ -10,7 +10,7 @@ from mmengine.model import BaseModule, ModuleList
 from mmengine.utils.dl_utils.parrots_wrapper import _BatchNorm
 from SoftPool import SoftPool2d
 
-from ..utils import ResLayer
+from ..utils import ResLayer, StripPooling
 from ..backbones.resnet import BasicBlock, Bottleneck
 
 
@@ -68,6 +68,9 @@ class ChannelAtt(BaseModule):
 
 
 class RamLayer(BaseModule):
+    """
+    input (B, C, H, W)
+    """
     def __init__(self,
                  in_channel,
                  out_channel,
@@ -97,6 +100,8 @@ class RamLayer(BaseModule):
         )
         self.s_fuse = ChannelAtt(gate_channels=out_channel, reduction_ratio=2, pool_types=['avg', 'max'])
         self.ram_dcn = DeformConv2dPack(out_channel, out_channel, kernel_size=(3, 3), stride=(1, 1), padding=1)
+        self.strip_pool_res = StripPooling(out_channel,(20, 12))
+        self.strip_pool_swin = StripPooling(out_channel, (20, 12))
 
     def forward(self, x, net_out):
         if self.is_swin_ram:
@@ -107,12 +112,15 @@ class RamLayer(BaseModule):
                 # TODO 验证'+'的效果
                 x = x + net_out
             else:
-                # 对swin做fuse
-                p = self.s_fuse(x)
-                # resnet做可变形卷积
-                net_out = self.ram_dcn(net_out)
-                p = p * net_out
-                x = x + p + net_out
+                x = self.strip_pool_swin(x)
+                out = self.strip_pool_res(net_out)
+                x = x + out
+                # # 对swin做fuse
+                # p = self.s_fuse(x)
+                # # resnet做可变形卷积
+                # net_out = self.ram_dcn(net_out)
+                # p = p * net_out
+                # x = x + p + net_out
         elif self.is_res_ram:
             # res是主网络
             # swin对应stage输出做1*1卷积，改变管道数
@@ -121,14 +129,17 @@ class RamLayer(BaseModule):
                 # TODO 验证'+'的效果
                 x = x + net_out
             else:
-                # DCN 可变形卷积
-                x = self.ram_dcn(x)
-                # 对swin做fuse
-                p = self.s_fuse(net_out)
-                # 将两个结果相乘
-                p = p * x
-                # 三部分相加
-                x = x + p + net_out
+                x = self.strip_pool_res(x)
+                out = self.strip_pool_swin(net_out)
+                x = x + out
+                # # DCN 可变形卷积
+                # x = self.ram_dcn(x)
+                # # 对swin做fuse
+                # p = self.s_fuse(net_out)
+                # # 将两个结果相乘
+                # p = p * x
+                # # 三部分相加
+                # x = x + p + net_out
         return x
 
 
