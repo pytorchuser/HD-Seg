@@ -4,6 +4,7 @@ from .embed import PatchEmbed
 from .encoding import Encoding
 from .inverted_residual import InvertedResidual, InvertedResidualV3
 from .make_divisible import make_divisible
+from .pooling import StripPooling
 from .ppm import DAPPM, PAPPM
 from .res_layer import ResLayer
 from .se_layer import SELayer
@@ -17,5 +18,6 @@ __all__ = [
     'ResLayer', 'SelfAttentionBlock', 'make_divisible', 'InvertedResidual',
     'UpConvBlock', 'InvertedResidualV3', 'SELayer', 'PatchEmbed',
     'nchw_to_nlc', 'nlc_to_nchw', 'nchw2nlc2nchw', 'nlc2nchw2nlc', 'Encoding',
-    'Upsample', 'resize', 'DAPPM', 'PAPPM', 'BasicBlock', 'Bottleneck'
+    'Upsample', 'resize', 'DAPPM', 'PAPPM', 'BasicBlock', 'Bottleneck',
+    'StripPooling'
 ]
