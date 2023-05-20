@@ -9,12 +9,12 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 JSON_LOGS_DIR = ['../output/train/'
-                 'oct_T_48_3lr_adamW_unet-s5-d16_fcn_city_hcms2018_epoch100_1x/'
-                 '20230517_182401/vis_data/20230517_182401.json']
+                 '错40-60oct_T_88_3lr_sim_fcm_res_loss&ce_Linear10_Step10_hcms2018_pad512_epoch100_1x/'
+                 '20230519_005742/vis_data/20230519_005742.json']
 # METRIC_KEYS：想绘制的参数名称
 # METRIC_KEYS = ['mDice']
-# METRIC_KEYS = ['lr']
-METRIC_KEYS = ['loss']
+METRIC_KEYS = ['lr']
+# METRIC_KEYS = ['loss']
 
 def plot_curve(log_dicts, args):
     if args.backend is not None:

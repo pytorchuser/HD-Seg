@@ -34,13 +34,9 @@ class FCMLayer(BaseModule):
         self.out_channels = out_channels
         if act_cfg is None:
             act_cfg = dict(type='GELU')
-        # 归一化
-        self.batchNorm = nn.BatchNorm2d(out_channels)
-        # 激活函数
-        self.act_layer = build_activation_layer(act_cfg)
         self.stage1 = nn.Sequential(
             # softPool
-            SoftPool2d(kernel_size=(2, 2), stride=(2, 2)),
+            # SoftPool2d(kernel_size=(2, 2), stride=(2, 2)),
             # 组归一化
             nn.GroupNorm(in_channels // 2, in_channels),
             # 1*1卷积
@@ -50,8 +46,8 @@ class FCMLayer(BaseModule):
                 out_channels=out_channels,
                 kernel_size=1,
                 stride=1),
-            self.batchNorm,
-            self.act_layer
+            nn.BatchNorm2d(out_channels),
+            build_activation_layer(act_cfg)
         )
         self.stage2 = nn.Sequential(
             # 1*1卷积
@@ -61,8 +57,8 @@ class FCMLayer(BaseModule):
                 out_channels=out_channels,
                 kernel_size=1,
                 stride=1),
-            self.batchNorm,
-            self.act_layer,
+            nn.BatchNorm2d(out_channels),
+            build_activation_layer(act_cfg),
             # 3*3卷积
             build_conv_layer(
                 dict(type=conv_type),
@@ -72,7 +68,7 @@ class FCMLayer(BaseModule):
                 stride=1,
                 dilation=2,
                 padding=2),
-            self.batchNorm,
+            nn.BatchNorm2d(out_channels),
             # 1*1卷积
             build_conv_layer(
                 dict(type=conv_type),
@@ -80,8 +76,8 @@ class FCMLayer(BaseModule):
                 out_channels=out_channels,
                 kernel_size=1,
                 stride=2),
-            self.batchNorm,
-            self.act_layer,
+            nn.BatchNorm2d(out_channels),
+            build_activation_layer(act_cfg),
         )
 
     def forward(self, x, hw_shape):
@@ -94,6 +90,7 @@ class FCMLayer(BaseModule):
         x = x.view(B, C, H, W)
         soft_x = x
         # softPool 分支
+        soft_x = F.adaptive_avg_pool2d(soft_x, (H // 2, W // 2))
         soft_x = self.stage1(soft_x)
         # 长分支
         x = self.stage2(x)
@@ -809,6 +806,7 @@ class SIMSwinTransformer(BaseModule):
                 ram_simple=ram_simple
             )
         self.is_swin_ram = is_swin_ram
+        self.is_res_ram = is_res_ram
         # 初始化swin stages
         self.stages = ModuleList()
         in_channels = embed_dims
