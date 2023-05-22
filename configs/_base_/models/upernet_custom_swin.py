@@ -112,10 +112,10 @@ model = dict(
         # 解码过程中调整大小(resize)的 align_corners 参数
         align_corners=False,
         # 辅助头(auxiliary head)里的损失函数的配置项
-        loss_decode=dict(
-            type='CrossEntropyLoss',
-            use_sigmoid=False,
-            loss_weight=0.4)),
+        # loss_decode=dict(
+        #     type='CrossEntropyLoss', use_sigmoid=False, loss_weight=0.4)),
+        loss_decode=[dict(type='CrossEntropyLoss', loss_name='loss_ce', loss_weight=0.4),
+                     dict(type='DiceLoss', loss_name='loss_dice', loss_weight=0.4)]),
     # model training and testing settings
     # train_cfg 当前仅是一个占位符
     train_cfg=dict(),
