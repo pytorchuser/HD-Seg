@@ -49,22 +49,70 @@ class ChannelAtt(BaseModule):
         max_pool = F.max_pool2d(x, (x.size(2), x.size(3)), stride=(x.size(2), x.size(3)))
         avg_pool_mlp = self.mlp(avg_pool)
         max_pool_mlp = self.mlp(max_pool)
-        sum_pool = avg_pool_mlp + max_pool_mlp
 
         # release
         soft_pool = SoftPool2d(kernel_size=(x.size(2), x.size(3)), stride=(x.size(2), x.size(3)))
         soft_pool = self.mlp(soft_pool(x))
-        weight_pool = soft_pool * sum_pool
+        sum_pool = avg_pool_mlp + max_pool_mlp + soft_pool
 
         # debug 用
         # test_pool = F.max_pool2d(x, (x.size(2), x.size(3)), stride=(x.size(2), x.size(3)))
         # test_pool = self.mlp(test_pool)
-        # weight_pool = test_pool * sum_pool
+        # sum_pool = avg_pool_mlp + max_pool_mlp + test_pool
 
-        # channel_att_sum = self.mlp(weight_pool)
-        channel_att_sum = self.incr(weight_pool)
+        channel_att_sum = self.incr(sum_pool)
         att = torch.sigmoid(channel_att_sum).unsqueeze(2).unsqueeze(3).expand_as(x)
         return att
+
+
+class BranchAtt(BaseModule):
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 ratio=4,
+                 branch_num=2,
+                 lower_bound=32,
+                 conv_type='Conv2d',
+                 act_cfg=None):
+        super().__init__()
+        if act_cfg is None:
+            act_cfg = dict(type='ReLU', inplace=True)
+        self.out_channels = out_channels
+        self.branch_num = branch_num
+        # 计算出降维参数d
+        d = max(in_channels // ratio, lower_bound)
+        # 降维
+        self.re_de = nn.Sequential(
+            build_conv_layer(
+                dict(type=conv_type),
+                in_channels=out_channels,
+                out_channels=d,
+                kernel_size=1,
+                bias=False),
+            nn.BatchNorm2d(d),
+            build_activation_layer(act_cfg)
+        )
+        # 升维
+        self.asc_de = build_conv_layer(
+                dict(type=conv_type),
+                in_channels=d,
+                out_channels=out_channels * branch_num,
+                kernel_size=1,
+                stride=1,
+                bias=False)
+        self.soft_max = nn.Softmax(dim=1)
+
+    def forward(self, x):
+        batch_size = x.shape(0)
+        # 先降维再升维，reshape成按branch_num可拆分的形状
+        x = self.re_de(x)
+        x = self.asc_de(x)
+        x = x.reshape(batch_size, self.branch_num, self.out_channels, -1)
+        # 走softmax，chunk成需要的块后再reshape可处理的形状
+        x = self.soft_max(x)
+        a_b = list(x.chunk(self.branch_num, dim=1))
+        a_b = list(map(lambda a: a.reshape(batch_size, self.out_channels, 1, 1), a_b))
+        return a_b
 
 
 class RamLayer(BaseModule):
@@ -98,9 +146,10 @@ class RamLayer(BaseModule):
             nn.BatchNorm2d(out_channel, eps=1e-5, momentum=0.01, affine=True),
             build_activation_layer(act_cfg)
         )
-        self.s_fuse = ChannelAtt(gate_channels=out_channel, reduction_ratio=2, pool_types=['avg', 'max'])
-        self.ram_dcn = DeformConv2dPack(out_channel, out_channel, kernel_size=(3, 3), stride=(1, 1), padding=1)
-        self.strip_pool_res = StripPooling(out_channel,(20, 12))
+        self.channel_att = ChannelAtt(gate_channels=out_channel, reduction_ratio=2)
+        # self.ram_dcn = DeformConv2dPack(out_channel, out_channel, kernel_size=(3, 3), stride=(1, 1), padding=1)
+        self.branch_att = BranchAtt(out_channel, out_channel)
+        self.strip_pool_res = StripPooling(out_channel, (20, 12))
         self.strip_pool_swin = StripPooling(out_channel, (20, 12))
 
     def forward(self, x, net_out):
@@ -112,15 +161,21 @@ class RamLayer(BaseModule):
                 # TODO 验证'+'的效果
                 x = x + net_out
             else:
-                x = self.strip_pool_swin(x)
-                out = self.strip_pool_res(net_out)
-                x = x + out
-                # # 对swin做fuse
-                # p = self.s_fuse(x)
-                # # resnet做可变形卷积
-                # net_out = self.ram_dcn(net_out)
-                # p = p * net_out
-                # x = x + p + net_out
+                x = x + net_out
+                # 1。channel att
+                # sum分别走三个pool+mlp，三个结果相加后走sigmoid
+                x = self.channel_att(x)
+                # 2。分支 branch attention
+                a_b = self.branch_att(x)
+                # 将out与分支注意力结果，按顺序分别相乘
+                swin_out = x * a_b[0]
+                res_out = net_out * a_b[1]
+                # 3。空间
+                # 将out分别走stripPool
+                swin_out = self.strip_pool_swin(swin_out)
+                res_out = self.strip_pool_res(res_out)
+                # 再相加
+                x = swin_out + res_out
         elif self.is_res_ram:
             # res是主网络
             # swin对应stage输出做1*1卷积，改变管道数
