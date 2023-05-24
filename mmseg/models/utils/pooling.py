@@ -155,6 +155,7 @@ class StripPooling(BaseModule):
         # x2_w = F.interpolate(self.pool_w_conv(x2), (h, w), **self.up_cfg)
         # 将x2经过以上不同流程的值相加
         x2 = self.conv(F.relu_(x2_h))
+        # x2 = self.conv(F.relu_(x2_h + x2_w))
         # 将x1 x2拼在一起并还原管道数
         out = self.re_conv(torch.cat([x1, x2], dim=1))
         # out与input原值直接相加

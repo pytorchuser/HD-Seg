@@ -416,10 +416,9 @@ class ResNetRam(BaseModule):
             self.add_module(layer_name, res_layer)
             self.res_layers.append(layer_name)
             # ram layer初始化, in_channel与swin out_channel一致
-            swin_channels = swin_channels * 2**i
             if is_res_ram:
                 ram_layer = RamLayer(
-                    in_channel=swin_channels,
+                    in_channel=swin_channels * 2**i,
                     out_channel=planes * 4,
                     is_res_ram=is_res_ram,
                     ram_simple=ram_simple)
