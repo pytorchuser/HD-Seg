@@ -505,6 +505,7 @@ class SwinBlockSequence(BaseModule):
                  act_cfg=dict(type='GELU'),
                  norm_cfg=dict(type='LN'),
                  with_cp=False,
+                 ram_simple=True,
                  init_cfg=None,
                  resnet_channels=0):
         super().__init__(init_cfg=init_cfg)
@@ -541,7 +542,8 @@ class SwinBlockSequence(BaseModule):
             self.ram_layer = RamLayer(
                 in_channel=resnet_channels,
                 out_channel=embed_dims,
-                is_swin_ram=is_swin_ram)
+                is_swin_ram=is_swin_ram,
+                ram_simple=ram_simple)
         self.downsample = downsample
         self.is_sim = is_sim
         self.is_swin_ram = is_swin_ram
@@ -843,6 +845,7 @@ class SIMSwinTransformer(BaseModule):
                 downsample=downsample,
                 is_sim=is_sim,
                 is_swin_ram=is_swin_ram,
+                ram_simple=ram_simple,
                 act_cfg=act_cfg,
                 norm_cfg=norm_cfg,
                 with_cp=with_cp,

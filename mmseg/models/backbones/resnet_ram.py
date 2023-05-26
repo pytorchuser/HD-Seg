@@ -51,9 +51,10 @@ class ChannelAtt(BaseModule):
         max_pool_mlp = self.mlp(max_pool)
 
         # release
-        soft_pool = SoftPool2d(kernel_size=(x.size(2), x.size(3)), stride=(x.size(2), x.size(3)))
-        soft_pool = self.mlp(soft_pool(x))
-        sum_pool = avg_pool_mlp + max_pool_mlp + soft_pool
+        # soft_pool = SoftPool2d(kernel_size=(x.size(2), x.size(3)), stride=(x.size(2), x.size(3)))
+        # soft_pool=soft_pool(x)
+        # soft_pool_mlp = self.mlp(soft_pool)
+        sum_pool = avg_pool_mlp + max_pool_mlp
 
         # debug 用
         # test_pool = F.max_pool2d(x, (x.size(2), x.size(3)), stride=(x.size(2), x.size(3)))
@@ -61,7 +62,7 @@ class ChannelAtt(BaseModule):
         # sum_pool = avg_pool_mlp + max_pool_mlp + test_pool
 
         channel_att_sum = self.incr(sum_pool)
-        att = torch.sigmoid(channel_att_sum).unsqueeze(2).unsqueeze(3).expand_as(x)
+        att = torch.sigmoid(channel_att_sum).unsqueeze(2).unsqueeze(3).expand_as(avg_pool)
         return att
 
 
@@ -103,7 +104,8 @@ class BranchAtt(BaseModule):
         self.soft_max = nn.Softmax(dim=1)
 
     def forward(self, x):
-        batch_size = x.shape(0)
+        # batch_size = x.shape(0)
+        batch_size = x.shape[0]
         # 先降维再升维，reshape成按branch_num可拆分的形状
         x = self.re_de(x)
         x = self.asc_de(x)
@@ -164,9 +166,9 @@ class RamLayer(BaseModule):
                 x = x + net_out
                 # 1。channel att
                 # sum分别走三个pool+mlp，三个结果相加后走sigmoid
-                x = self.channel_att(x)
+                att = self.channel_att(x)
                 # 2。分支 branch attention
-                a_b = self.branch_att(x)
+                a_b = self.branch_att(att)
                 # 将out与分支注意力结果，按顺序分别相乘
                 swin_out = x * a_b[0]
                 res_out = net_out * a_b[1]
@@ -175,7 +177,7 @@ class RamLayer(BaseModule):
                 swin_out = self.strip_pool_swin(swin_out)
                 res_out = self.strip_pool_res(res_out)
                 # 再相加
-                x = swin_out + res_out
+                x = swin_out + res_out + x
         elif self.is_res_ram:
             # res是主网络
             # swin对应stage输出做1*1卷积，改变管道数
@@ -184,9 +186,21 @@ class RamLayer(BaseModule):
                 # TODO 验证'+'的效果
                 x = x + net_out
             else:
-                x = self.strip_pool_res(x)
-                out = self.strip_pool_swin(net_out)
-                x = x + out
+                x = x + net_out
+                # 1。channel att
+                # sum分别走三个pool+mlp，三个结果相加后走sigmoid
+                att = self.channel_att(x)
+                # 2。分支 branch attention
+                a_b = self.branch_att(att)
+                # 将out与分支注意力结果，按顺序分别相乘
+                swin_out = x * a_b[0]
+                res_out = net_out * a_b[1]
+                # 3。空间
+                # 将out分别走stripPool
+                swin_out = self.strip_pool_swin(swin_out)
+                res_out = self.strip_pool_res(res_out)
+                # 再相加
+                x = swin_out + res_out + x
                 # # DCN 可变形卷积
                 # x = self.ram_dcn(x)
                 # # 对swin做fuse
