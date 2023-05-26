@@ -15,6 +15,7 @@ from .mscan import MSCAN
 from .pidnet import PIDNet
 from .resnest import ResNeSt
 from .resnet import ResNet, ResNetV1c, ResNetV1d
+from .resnet_plus import ResNetPlus
 from .resnet_ram import ResNetRam, RamLayer
 from .resnext import ResNeXt
 from .stdc import STDCContextPathNet, STDCNet
@@ -24,6 +25,7 @@ from .twins import PCPVT, SVT
 from .unet import UNet
 from .vit import VisionTransformer
 from .sim_swin import SIMSwinTransformer
+from .sim_swin_plus import SIMSwinTransformerPlus
 
 __all__ = [
     'ResNet', 'ResNetV1c', 'ResNetV1d', 'ResNeXt', 'HRNet', 'FastSCNN',
@@ -31,5 +33,5 @@ __all__ = [
     'VisionTransformer', 'SwinTransformer', 'MixVisionTransformer',
     'BiSeNetV1', 'BiSeNetV2', 'ICNet', 'TIMMBackbone', 'ERFNet', 'PCPVT',
     'SVT', 'STDCNet', 'STDCContextPathNet', 'BEiT', 'MAE', 'PIDNet', 'MSCAN',
-    'SIMSwinTransformer', 'RamLayer',
+    'SIMSwinTransformer', 'RamLayer', 'ResNetPlus', 'SIMSwinTransformerPlus'
 ]

@@ -1,10 +1,10 @@
-from SoftPool import SoftPool2d
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from mmcv.cnn import build_conv_layer, build_norm_layer, build_activation_layer
-from mmcv.ops import DeformConv2dPack
+from mmcv.cnn import build_conv_layer, build_activation_layer
 from mmengine.model import BaseModule
+
+from mmseg.models.utils import StripPooling
 
 
 class Flatten(BaseModule):
@@ -43,11 +43,6 @@ class ChannelAtt(BaseModule):
         # soft_pool=soft_pool(x)
         # soft_pool_mlp = self.mlp(soft_pool)
         sum_pool = avg_pool_mlp + max_pool_mlp
-
-        # debug 用
-        # test_pool = F.max_pool2d(x, (x.size(2), x.size(3)), stride=(x.size(2), x.size(3)))
-        # test_pool = self.mlp(test_pool)
-        # sum_pool = avg_pool_mlp + max_pool_mlp + test_pool
 
         channel_att_sum = self.incr(sum_pool)
         att = torch.sigmoid(channel_att_sum).unsqueeze(2).unsqueeze(3).expand_as(avg_pool)
@@ -103,3 +98,24 @@ class BranchAtt(BaseModule):
         a_b = list(x.chunk(self.branch_num, dim=1))
         a_b = list(map(lambda a: a.reshape(batch_size, self.out_channels, 1, 1), a_b))
         return a_b
+
+
+class AttLayer(BaseModule):
+    """
+    input (B, C, H, W)
+    """
+    def __init__(self,
+                 in_channels,
+                 init_cfg=None):
+        super().__init__(init_cfg)
+        self.channel_att = ChannelAtt(gate_channels=in_channels, reduction_ratio=2)
+        self.strip_pool = StripPooling(in_channels, (20, 12))
+
+    def forward(self, x):
+        # 1。channel att
+        c_att = self.channel_att(x)
+        x = c_att * x
+        # 2。空间 att
+        x = self.strip_pool(x)
+        return x
+
