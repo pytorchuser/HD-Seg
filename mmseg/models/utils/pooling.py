@@ -9,10 +9,13 @@ class StripPooling(BaseModule):
     def __init__(self,
                  in_channels,
                  pool_size,
+                 kernel_size=7,
                  norm_cfg=None,
                  act_cfg=None,
                  conv_cfg=None):
         super().__init__(norm_cfg)
+        assert kernel_size in (3, 7), "kernel_size 只能为3或7"
+        padding = 3 if kernel_size == 7 else 1
         if norm_cfg is None:
             norm_cfg = dict(type='BN', requires_grad=True)
         if act_cfg is None:
@@ -33,44 +36,53 @@ class StripPooling(BaseModule):
             build_norm_layer(norm_cfg, inter_channels)[1],
             build_activation_layer(act_cfg)
         )
+        self.x1_conv = nn.Sequential(
+            build_conv_layer(
+                conv_cfg,
+                2,
+                1,
+                kernel_size=kernel_size,
+                padding=padding,
+                bias=False),
+        )
         # 一个普通的3*3卷积
-        self.conv3_3 = nn.Sequential(
-            build_conv_layer(
-                conv_cfg,
-                inter_channels,
-                inter_channels,
-                kernel_size=3,
-                stride=1,
-                padding=1,
-                bias=False),
-            build_norm_layer(norm_cfg, inter_channels)[1],
-        )
+        # self.conv3_3 = nn.Sequential(
+        #     build_conv_layer(
+        #         conv_cfg,
+        #         inter_channels,
+        #         inter_channels,
+        #         kernel_size=3,
+        #         stride=1,
+        #         padding=1,
+        #         bias=False),
+        #     build_norm_layer(norm_cfg, inter_channels)[1],
+        # )
         # 使用pool_size[0]池化操作并进行卷积
-        self.pool_0_conv = nn.Sequential(
-            nn.AdaptiveAvgPool2d(pool_size[0]),
-            build_conv_layer(
-                conv_cfg,
-                inter_channels,
-                inter_channels,
-                kernel_size=3,
-                stride=1,
-                padding=1,
-                bias=False),
-            build_norm_layer(norm_cfg, inter_channels)[1],
-        )
+        # self.pool_0_conv = nn.Sequential(
+        #     nn.AdaptiveAvgPool2d(pool_size[0]),
+        #     build_conv_layer(
+        #         conv_cfg,
+        #         inter_channels,
+        #         inter_channels,
+        #         kernel_size=3,
+        #         stride=1,
+        #         padding=1,
+        #         bias=False),
+        #     build_norm_layer(norm_cfg, inter_channels)[1],
+        # )
         # 使用pool_size[1]池化操作并进行卷积
-        self.pool_1_conv = nn.Sequential(
-            nn.AdaptiveAvgPool2d(pool_size[1]),
-            build_conv_layer(
-                conv_cfg,
-                inter_channels,
-                inter_channels,
-                kernel_size=3,
-                stride=1,
-                padding=1,
-                bias=False),
-            build_norm_layer(norm_cfg, inter_channels)[1],
-        )
+        # self.pool_1_conv = nn.Sequential(
+        #     nn.AdaptiveAvgPool2d(pool_size[1]),
+        #     build_conv_layer(
+        #         conv_cfg,
+        #         inter_channels,
+        #         inter_channels,
+        #         kernel_size=3,
+        #         stride=1,
+        #         padding=1,
+        #         bias=False),
+        #     build_norm_layer(norm_cfg, inter_channels)[1],
+        # )
         self.pool_h_conv = nn.Sequential(
             nn.AdaptiveAvgPool2d((None, 1)),
             build_conv_layer(
@@ -116,24 +128,33 @@ class StripPooling(BaseModule):
                 in_channels,
                 kernel_size=1,
                 bias=False),
-            build_norm_layer(norm_cfg, inter_channels)[1],
+            build_norm_layer(norm_cfg, in_channels)[1],
         )
 
     def forward(self, x):
         _, _, h, w = x.size()
         # 改变管道大小的卷积
         x1 = x2 = self.c_conv(x)
-        x1_2 = self.conv3_3(x1)
-        # x1 池化-3*3卷积-扩充（两遍走不同尺寸的池化）
-        x1_0 = F.interpolate(self.pool_0_conv(x1), (h, w), **self.up_cfg)
-        x1_1 = F.interpolate(self.pool_1_conv(x1), (h, w), **self.up_cfg)
-        # 将x1经过以上不同流程的值相加
-        x1 = self.conv(F.relu_(x1_0 + x1_1 + x1_2))
+        # 计算平均和最大值
+        avg_out = torch.mean(x1, dim=1, keepdim=True)
+        max_out, _ = torch.max(x1, dim=1, keepdim=True)
+        # 拼接结果并改变管道数为1
+        x1_out = torch.cat([avg_out, max_out], dim=1)
+        x1_out = self.x1_conv(x1_out)
+        # sigmoid
+        x1_out = torch.sigmoid(x1_out)
+        x1 = x1 * x1_out
+        # x1_2 = self.conv3_3(x1)
+        # # x1 池化-3*3卷积-扩充（两遍走不同尺寸的池化）
+        # x1_0 = F.interpolate(self.pool_0_conv(x1), (h, w), **self.up_cfg)
+        # x1_1 = F.interpolate(self.pool_1_conv(x1), (h, w), **self.up_cfg)
+        # # 将x1经过以上不同流程的值相加
+        # x1 = self.conv(F.relu_(x1_0 + x1_1 + x1_2))
         # x2 池化-卷积-扩充
         x2_h = F.interpolate(self.pool_h_conv(x2), (h, w), **self.up_cfg)
-        x2_w = F.interpolate(self.pool_w_conv(x2), (h, w), **self.up_cfg)
+        # x2_w = F.interpolate(self.pool_w_conv(x2), (h, w), **self.up_cfg)
         # 将x2经过以上不同流程的值相加
-        x2 = self.conv(F.relu_(x2_h + x2_w))
+        x2 = self.conv(F.relu_(x2_h))
         # 将x1 x2拼在一起并还原管道数
         out = self.re_conv(torch.cat([x1, x2], dim=1))
         # out与input原值直接相加
