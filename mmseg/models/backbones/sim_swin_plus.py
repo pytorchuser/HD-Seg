@@ -794,6 +794,7 @@ class SIMSwinTransformerPlus(BaseModule):
         )
         # 初始化swin stages
         self.stages = ModuleList()
+        self.cat_conv_list = ModuleList()
         in_channels = embed_dims
         for i in range(num_layers):
             # 下采样
@@ -832,6 +833,14 @@ class SIMSwinTransformerPlus(BaseModule):
                 with_cp=with_cp,
                 init_cfg=None)
             self.stages.append(stage)
+
+            # 每个stage对应cat操作的卷积
+            cat_conv = build_conv_layer(
+                dict(type='Conv2d'),
+                in_channels=in_channels * 2,
+                out_channels=in_channels,
+                kernel_size=1)
+            self.cat_conv_list.append(cat_conv)
 
             if downsample:
                 in_channels = downsample.out_channels
@@ -967,5 +976,12 @@ class SIMSwinTransformerPlus(BaseModule):
         # 走resnet_plus
         res_out = self.resnet_plus(org_x)
         assert len(swin_outs) == len(res_out), 'swin和res的stage必须相等'
-        outs = list(map(lambda a, b: a+b, swin_outs, res_out))
+        # 普通相加
+        # outs = list(map(lambda a, b: a+b, swin_outs, res_out))
+        # concat
+        outs = []
+        for i, swin, res in zip(swin_outs, res_out):
+            out = torch.cat([swin, res], dim=1)
+            out = self.cat_conv_list[i](out)
+            outs.append(out)
         return outs
