@@ -114,8 +114,9 @@ class AttLayer(BaseModule):
     def forward(self, x):
         # 1。channel att
         c_att = self.channel_att(x)
-        x = c_att * x
+        att = c_att * x
         # 2。空间 att
-        x = self.strip_pool(x)
+        att = self.strip_pool(att)
+        x = att + x
         return x
 

@@ -12,7 +12,7 @@ from mmseg.registry import RUNNERS
 CUDA_LAUNCH_BLOCKING = 1
 # swin_trans
 CONFIG = '../configs/swin/my_upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K.py'
-WORK_DIR = 'output/train/oct_T_88_3lr_swin_daloss&ce_Linear10_Step10_hcms2018_pad512_epoch100_1x'
+WORK_DIR = 'output/train/oct_T_88_3lr_ufe_plus_toppret_daloss&ce_Linear10_Step10_hcms2018_pad512_epoch100_1x'
 
 # # u-net(fcn)
 # CONFIG = '../configs/unet/unet-s5-d16_fcn_4xb4-160k_cityscapes-512x1024.py'
