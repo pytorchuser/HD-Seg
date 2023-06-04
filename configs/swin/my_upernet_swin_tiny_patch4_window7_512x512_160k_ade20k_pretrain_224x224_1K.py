@@ -3,10 +3,10 @@ _base_ = [
     '../_base_/default_runtime.py', '../_base_/schedules/schedule_epoch.py'
 ]
 # load_from = '../pth/upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210531_112542-e380ad3e.pth'  # noqa
-load_from = '../pth/top91.45oct_T_88_3lr_ufe_res_ram_nowstrp_daloss&ce_Linear10_Step10_hcms2018_pad512_epoch100_1x.pth'  # noqa
+load_from = '../pth/upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210531_112542-e380ad3e.pth'  # noqa
 NUM_CLASSES = 9
 
-data_preprocessor = dict(size=(512, 512))
+data_preprocessor = dict(size=(512, 256))
 
 model = dict(
     data_preprocessor=data_preprocessor,
@@ -17,17 +17,18 @@ model = dict(
         num_heads=[3, 6, 12, 24],
         window_size=7,
         patch_size=4,
+        strides=(4, 2, 2, 2),
         qkv_bias=True,
         qk_scale=True,
         use_abs_pos_embed=False,
-        drop_path_rate=0.3,
-        attn_drop_rate=0.3,
+        # drop_path_rate=0.3,
+        # attn_drop_rate=0.3,
         patch_norm=True),
     decode_head=dict(
                      in_channels=[96, 192, 384, 768],
                      # in_channels=[128, 256, 512, 1024],
-                     num_classes=NUM_CLASSES, dropout_ratio=0.2,
-                     loss_decode=[dict(type='CrossEntropyLoss', loss_name='loss_ce', loss_weight=1.0),
+                     num_classes=NUM_CLASSES, dropout_ratio=0.1,
+                     loss_decode=[dict(type='CrossEntropyLoss', loss_name='loss_ce', loss_weight=2.0),
                      dict(type='DiceLoss', loss_name='loss_dice', loss_weight=1.0)],
                      # TODO 此处添加配置信息msc_module_cfg
                      # msc_module_cfg=[
@@ -66,7 +67,8 @@ model = dict(
                      #     dict(type='PPM', layer_idx=1), dict(type='PPM', layer_idx=2),
                      #     dict(type='PPM', layer_idx=3)]
                      ),
-    auxiliary_head=dict(in_channels=384, dropout_ratio=0.1, num_classes=NUM_CLASSES))
+    # auxiliary_head=dict(in_channels=384, dropout_ratio=0.1, num_classes=NUM_CLASSES)
+)
 
 # AdamW optimizer, no weight decay for position embedding & layer norm in backbone
 optimizer = dict(

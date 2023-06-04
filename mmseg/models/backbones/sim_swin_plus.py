@@ -980,8 +980,10 @@ class SIMSwinTransformerPlus(BaseModule):
         # outs = list(map(lambda a, b: a+b, swin_outs, res_out))
         # concat
         outs = []
-        for i, swin, res in zip(swin_outs, res_out):
+        i = 0
+        for swin, res in zip(swin_outs, res_out):
             out = torch.cat([swin, res], dim=1)
             out = self.cat_conv_list[i](out)
             outs.append(out)
+            i = i + 1
         return outs

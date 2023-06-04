@@ -8,6 +8,8 @@ from mmcv.cnn import build_conv_layer, build_norm_layer
 from mmengine.model import BaseModule
 from mmengine.utils import to_2tuple
 
+from mmseg.models.utils.pooling import StripPooling
+
 
 class AdaptivePadding(nn.Module):
     """Applies padding to input (if needed) so that input can get fully covered
@@ -90,7 +92,7 @@ class PatchEmbed(BaseModule):
         embed_dims (int): The dimensions of embedding. Default: 768
         conv_type (str): The config dict for embedding
             conv layer type selection. Default: "Conv2d".
-        kernel_size (int): The kernel_size of embedding conv. Default: 16.
+        kernel_size (int | tuple): The kernel_size of embedding conv. Default: 16.
         stride (int, optional): The slide stride of embedding conv.
             Default: None (Would be set as `kernel_size`).
         padding (int | tuple | string ): The padding length of
@@ -112,7 +114,8 @@ class PatchEmbed(BaseModule):
                  in_channels=3,
                  embed_dims=768,
                  conv_type='Conv2d',
-                 kernel_size=16,
+                 # kernel_size=16,
+                 kernel_size=None,
                  stride=None,
                  padding='corner',
                  dilation=1,
@@ -126,8 +129,26 @@ class PatchEmbed(BaseModule):
         if stride is None:
             stride = kernel_size
 
-        kernel_size = to_2tuple(kernel_size)
-        stride = to_2tuple(stride)
+        # kernel_size = to_2tuple(kernel_size)
+        # stride = to_2tuple(stride)
+        if isinstance(kernel_size, int):
+            kernel_size = to_2tuple(kernel_size)
+        elif isinstance(kernel_size, tuple):
+            if len(kernel_size) == 1:
+                pretrain_img_size = to_2tuple(kernel_size[0])
+            assert len(kernel_size) == 2, \
+                f'The size of kernel should have length 1 or 2, ' \
+                f'but got {len(kernel_size)}'
+
+        if isinstance(stride, int):
+            stride = to_2tuple(stride)
+        elif isinstance(stride, tuple):
+            if len(stride) == 1:
+                pretrain_img_size = to_2tuple(stride[0])
+            assert len(stride) == 2, \
+                f'The size of stride should have length 1 or 2, ' \
+                f'but got {len(stride)}'
+
         dilation = to_2tuple(dilation)
 
         if isinstance(padding, str):
@@ -152,6 +173,8 @@ class PatchEmbed(BaseModule):
             dilation=dilation,
             bias=bias)
 
+        self.sp_pooling = StripPooling(3, (20, 12))
+        self.max_pooling = nn.MaxPool2d(3, 2)
         if norm_cfg is not None:
             self.norm = build_norm_layer(norm_cfg, embed_dims)[1]
         else:
@@ -196,7 +219,9 @@ class PatchEmbed(BaseModule):
         if self.adap_padding:
             x = self.adap_padding(x)
 
+        # x = self.sp_pooling(x)
         x = self.projection(x)
+        # x = self.max_pooling(x)
         out_size = (x.shape[2], x.shape[3])
         x = x.flatten(2).transpose(1, 2)
         if self.norm is not None:

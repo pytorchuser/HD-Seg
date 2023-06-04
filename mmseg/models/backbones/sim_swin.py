@@ -776,8 +776,10 @@ class SIMSwinTransformer(BaseModule):
             in_channels=in_channels,
             embed_dims=embed_dims,
             conv_type='Conv2d',
-            kernel_size=patch_size,
-            stride=strides[0],
+            # kernel_size=patch_size,
+            # stride=strides[0],
+            kernel_size=(4, 4),
+            stride=(4, 4),
             padding='corner',
             norm_cfg=norm_cfg if patch_norm else None,
             init_cfg=None)
