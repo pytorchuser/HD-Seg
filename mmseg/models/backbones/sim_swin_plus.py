@@ -18,7 +18,7 @@ from mmengine.utils import to_2tuple
 
 from mmseg.registry import MODELS
 from ..backbones.resnet_plus import ResNetPlus
-from ..utils.attention import AttLayer
+from ..utils.attention import AttLayer, SKLayer
 from ..utils.embed import PatchEmbed, PatchMerging
 
 
@@ -794,7 +794,7 @@ class SIMSwinTransformerPlus(BaseModule):
         )
         # 初始化swin stages
         self.stages = ModuleList()
-        self.cat_conv_list = ModuleList()
+        self.sk_layers = ModuleList()
         in_channels = embed_dims
         for i in range(num_layers):
             # 下采样
@@ -834,13 +834,9 @@ class SIMSwinTransformerPlus(BaseModule):
                 init_cfg=None)
             self.stages.append(stage)
 
-            # 每个stage对应cat操作的卷积
-            cat_conv = build_conv_layer(
-                dict(type='Conv2d'),
-                in_channels=in_channels * 2,
-                out_channels=in_channels,
-                kernel_size=1)
-            self.cat_conv_list.append(cat_conv)
+            # 每个stage对应sk layer
+            sk_layer = SKLayer(in_channels)
+            self.sk_layers.append(sk_layer)
 
             if downsample:
                 in_channels = downsample.out_channels
@@ -982,8 +978,7 @@ class SIMSwinTransformerPlus(BaseModule):
         outs = []
         i = 0
         for swin, res in zip(swin_outs, res_out):
-            out = torch.cat([swin, res], dim=1)
-            out = self.cat_conv_list[i](out)
+            out = self.sk_layers[i](swin, res)
             outs.append(out)
             i = i + 1
         return outs

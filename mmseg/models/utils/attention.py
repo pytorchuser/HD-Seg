@@ -65,16 +65,11 @@ class BranchAtt(BaseModule):
         self.branch_num = branch_num
         # 计算出降维参数d
         d = max(in_channels // ratio, lower_bound)
-        # 降维
-        self.re_de = nn.Sequential(
-            build_conv_layer(
-                dict(type=conv_type),
-                in_channels=out_channels,
-                out_channels=d,
-                kernel_size=1,
-                bias=False),
-            nn.BatchNorm2d(d),
-            build_activation_layer(act_cfg)
+        # mlp操作，降维
+        self.mlp = nn.Sequential(
+            Flatten(),
+            nn.Linear(in_channels, d),
+            build_activation_layer(act_cfg),
         )
         # 升维
         self.asc_de = build_conv_layer(
@@ -84,15 +79,15 @@ class BranchAtt(BaseModule):
                 kernel_size=1,
                 stride=1,
                 bias=False)
-        self.soft_max = nn.Softmax(dim=1)
+        self.soft_max = nn.Softmax(dim=1)  # 令两个FCs每个维度上的和为1， 即 a+b=1
 
     def forward(self, x):
         # batch_size = x.shape(0)
         batch_size = x.shape[0]
         # 先降维再升维，reshape成按branch_num可拆分的形状
-        x = self.re_de(x)
-        x = self.asc_de(x)
-        x = x.reshape(batch_size, self.branch_num, self.out_channels, -1)
+        x = self.mlp(x)
+        x = self.asc_de(x)  # (B, C*2, H, W)
+        x = x.reshape(batch_size, self.branch_num, self.out_channels, -1)  # (B, 2, C ,H*W)
         # 走softmax，chunk成需要的块后再reshape可处理的形状
         x = self.soft_max(x)
         a_b = list(x.chunk(self.branch_num, dim=1))
@@ -119,4 +114,28 @@ class AttLayer(BaseModule):
         att = self.strip_pool(att)
         x = att + x
         return x
+
+
+class SKLayer(BaseModule):
+    """
+        input (B, C, H, W)
+    """
+    def __init__(self,
+                 in_channels):
+        super().__init__()
+        self.branch_att = BranchAtt(in_channels, in_channels)
+
+    def forward(self, swin_out, res_out):
+        # swin+res
+        x = swin_out + res_out
+        # 平均池化
+        avg_pool = F.avg_pool2d(x, (x.size(2), x.size(3)), stride=(x.size(2), x.size(3)))
+        # 分支att（mlp+softmax）
+        a_b = self.branch_att(avg_pool)
+        # 两个分别乘 swin和res
+        swin = swin_out * a_b[0]
+        res = res_out * a_b[1]
+        # 再相加
+        out = swin + res
+        return out
 
