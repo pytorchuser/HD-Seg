@@ -84,6 +84,8 @@ class BaseDecodeHead(BaseModule, metaclass=ABCMeta):
             msc_module_cfg=[dict(type='MSC', layer_idx=2), dict(type='PPM', layer_idx=3)]
             对第4层进行PPM处理，对第3层进行MSC处理（未实现），不写的层使用默认处理
             注意：layer_idx需按顺序填写(从小到大)
+        do_ea(edge aware module): 在最浅两层，放置在跳跃链接前的模型。
+            e.g. do_ea=True 放置
     """
 
     def __init__(self,
@@ -108,7 +110,8 @@ class BaseDecodeHead(BaseModule, metaclass=ABCMeta):
                  align_corners=False,
                  init_cfg=dict(
                      type='Normal', std=0.01, override=dict(name='conv_seg')),
-                 msc_module_cfg=None):
+                 msc_module_cfg=None,
+                 do_ea=True):
         super(BaseDecodeHead, self).__init__(init_cfg)
         self._init_inputs(in_channels, in_index, input_transform)
         self.channels = channels
@@ -118,6 +121,7 @@ class BaseDecodeHead(BaseModule, metaclass=ABCMeta):
         self.act_cfg = act_cfg
         self.in_index = in_index
         self.msc_module_cfg = msc_module_cfg
+        self.do_ea = do_ea
 
         # TODO 不确定配置文件里面的数据结构是否需要处理，先预留位置
         # if msc_module_cfg is None:

@@ -1,16 +1,14 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import time
-
 import torch
 import torch.nn as nn
 from mmcv.cnn import ConvModule
 
-from mmengine.logging import MMLogger
 from ..utils import resize
 from ..builder import HEADS
 from .decode_head import BaseDecodeHead
 from .psp_head import PPM
 from .ufe_module import UFE
+from .ea_module import EA
 
 
 @HEADS.register_module()
@@ -28,14 +26,19 @@ class UPerCustomHead(BaseDecodeHead):
     def __init__(self, pool_scales=(1, 2, 3, 6), **kwargs):
         super(UPerCustomHead, self).__init__(
             input_transform='multiple_select', **kwargs)
-        self.t = time.time()
-        # self.logger = MMLogger.get_instance('loggerUPerCustomHead')
+        # TODO EA Module, 只在最浅两层做
+        if self.do_ea:
+            self.ea_idx = [0, 1]
+            self.ea_module = nn.ModuleList()
+            for i in self.ea_idx:
+                ea = EA(
+                    self.in_channels[i]
+                )
+                self.ea_module.append(ea)
         # PSP Module
         # 读取配置文件的参数，初始化PPM或其他(UFE)处理模型列表
         # 初始化对应的bottleneck卷积模型列表
         self.fe_modules, self.bottleneck_modules = self.init_fe_bottleneck_modules(pool_scales)
-        t1 = time.time()
-        # self.logger.info(f'psp module初始化耗时：{t1-self.t}, 累计总时长：{t1-self.t}')
         # FPN Module
         self.lateral_convs = nn.ModuleList()
         self.fpn_convs = nn.ModuleList()
@@ -79,8 +82,6 @@ class UPerCustomHead(BaseDecodeHead):
             conv_cfg=self.conv_cfg,
             norm_cfg=self.norm_cfg,
             act_cfg=self.act_cfg)
-        t2 = time.time()
-        # self.logger.info(f'fpn module初始化耗时：{t2 - t1}, 累计总时长：{t2 - self.t}')
 
     # inputs: transformer 每个stage输出的特征图列表
     # idx： 特殊处理的层级layer_idx inputs[idx]
@@ -88,7 +89,6 @@ class UPerCustomHead(BaseDecodeHead):
     # 用idx和module_idx确保卷积层in_channel一一对应
     def fe_forward(self, inputs, idx, module_type, module_idx):
         """Forward function of PSP or other module."""
-        t = time.time()
         # -1, x 就是 inputs 的最后的特征
         x = inputs[idx]
         # 原图 x 及其 进行psp的特征都放入 列表中进行保存
@@ -121,13 +121,21 @@ class UPerCustomHead(BaseDecodeHead):
         # inputs 是一个list ， 即前面4个stage得到的结果, 每个特征channels不同， 即特征维度不同
         inputs = self._transform_inputs(inputs)
 
-        # build laterals 对inputs进行卷积，让norm特征图有一个一致的维度
+        # TODO 此处添加EA操作，对原始的inputs进行
+        if self.do_ea:
+            ea_inputs = nn.ModuleList()
+            for idx in self.ea_idx:
+                ea = self.ea_module[idx](inputs[idx], inputs[idx + 1])
+                ea_inputs.append(ea)
+            for idx in self.ea_idx:
+                inputs[idx] = ea_inputs[idx]
+
+        # build laterals 对inputs进行卷积，让norm特征图有一个一致的维度C
         laterals = [
             self.lateral_convs[i](inputs[idx])
             for i, idx in enumerate(self.norm_idx)
         ]
 
-        t = time.time()
         # 需要处理的特征图拿出来进行psp(fe) forward
         # 根据配置文件-特殊处理层数来决定，对特征图哪一层进行什么类型的模型处理。处理后再使用下标插值，存入laterals对应位置，保证层级顺序
         if self.msc_module_cfg is not None:
@@ -135,8 +143,6 @@ class UPerCustomHead(BaseDecodeHead):
                 msc_layer_idx = self.msc_module_cfg[i].layer_idx
                 msc_layer_type = self.msc_module_cfg[i].type
                 laterals.insert(msc_layer_idx, self.fe_forward(inputs, msc_layer_idx, msc_layer_type, i))
-        t1 = time.time()
-        # self.logger.info(f'循环laterals.insert耗时：{t1 - t}, 累计总时长：{t1 - self.t}')
 
         # build top-down path
         used_backbone_levels = len(laterals)
@@ -151,8 +157,6 @@ class UPerCustomHead(BaseDecodeHead):
                 size=prev_shape,
                 mode='bilinear',
                 align_corners=self.align_corners)
-        t2 = time.time()
-        # self.logger.info(f'循环laterals.insert耗时：{t2 - t1}, 累计总时长：{t2 - self.t}')
         # build outputs
         # 对不需要特殊模型处理的层数残差连接后的特征图再各自走了一个卷积
         # 对不需要特殊处理的特征图进行3*3卷积并放入fpn_outs中
@@ -161,8 +165,6 @@ class UPerCustomHead(BaseDecodeHead):
             self.fpn_convs[i](laterals[idx])
             for i, idx in enumerate(self.norm_idx)
         ]
-        t3 = time.time()
-        # self.logger.info(f'fpn_outs耗时：{t3 - t2}, 累计总时长：{t3 - self.t}')
         # 把特殊处理过的特征图也加进来成为4个特征图
         # append psp feature
         # 根据配置文件-特殊处理层数，将特殊处理的特征图直接存入fpn_outs
