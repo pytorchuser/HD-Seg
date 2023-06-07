@@ -541,7 +541,7 @@ class SwinBlockSequence(BaseModule):
         if is_sim:
             self.sim = SimBlock(embed_dims=embed_dims)
         # 初始化swin内部的attLayer
-        self.att_layer = AttLayer(in_channels=embed_dims)
+        # self.att_layer = AttLayer(in_channels=embed_dims)
         self.downsample = downsample
         self.is_sim = is_sim
 
@@ -566,13 +566,13 @@ class SwinBlockSequence(BaseModule):
         else:
             for block in self.blocks:
                 x = block(x, hw_shape)
-        # 用att层处理
-        x = x.view(B, H, W, C)  # ([12, 64, 64, 384])
-        x = x.view(B, C, H, W)
-        # att流程
-        x = self.att_layer(x)
-        # 再变回3维矩阵
-        x = x.view(B, -1, C)
+        # # 用att层处理
+        # x = x.view(B, H, W, C)  # ([12, 64, 64, 384])
+        # x = x.view(B, C, H, W)
+        # # att流程
+        # x = self.att_layer(x)
+        # # 再变回3维矩阵
+        # x = x.view(B, -1, C)
 
         if self.downsample:
             x_down, down_hw_shape = self.downsample(x, hw_shape)
@@ -974,7 +974,7 @@ class SIMSwinTransformerPlus(BaseModule):
         assert len(swin_outs) == len(res_out), 'swin和res的stage必须相等'
         # 普通相加
         # outs = list(map(lambda a, b: a+b, swin_outs, res_out))
-        # concat
+        # sk layer
         outs = []
         i = 0
         for swin, res in zip(swin_outs, res_out):

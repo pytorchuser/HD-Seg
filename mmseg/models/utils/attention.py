@@ -85,7 +85,8 @@ class BranchAtt(BaseModule):
         # batch_size = x.shape(0)
         batch_size = x.shape[0]
         # 先降维再升维，reshape成按branch_num可拆分的形状
-        x = self.mlp(x)
+        mlp_out = self.mlp(x)
+        x = mlp_out.unsqueeze(2).unsqueeze(3)
         x = self.asc_de(x)  # (B, C*2, H, W)
         x = x.reshape(batch_size, self.branch_num, self.out_channels, -1)  # (B, 2, C ,H*W)
         # 走softmax，chunk成需要的块后再reshape可处理的形状

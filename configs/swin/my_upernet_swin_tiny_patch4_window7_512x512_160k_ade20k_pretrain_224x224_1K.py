@@ -28,7 +28,7 @@ model = dict(
                      in_channels=[96, 192, 384, 768],
                      # in_channels=[128, 256, 512, 1024],
                      num_classes=NUM_CLASSES, dropout_ratio=0.1,
-                     loss_decode=[dict(type='CrossEntropyLoss', loss_name='loss_ce', loss_weight=2.0),
+                     loss_decode=[dict(type='CrossEntropyLoss', loss_name='loss_ce', loss_weight=1.0),
                      dict(type='DiceLoss', loss_name='loss_dice', loss_weight=1.0)],
                      # TODO 此处添加配置信息msc_module_cfg
                      # msc_module_cfg=[

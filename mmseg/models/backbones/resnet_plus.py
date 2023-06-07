@@ -230,8 +230,8 @@ class ResNetPlus(BaseModule):
             self.add_module(layer_name, res_layer)
             self.res_layers.append(layer_name)
             # attLayer初始化
-            att_layer = AttLayer(in_channels=planes * 4)
-            self.att_layers.append(att_layer)
+            # att_layer = AttLayer(in_channels=planes * 4)
+            # self.att_layers.append(att_layer)
             self.inplanes = planes * self.block.expansion
 
         self._freeze_stages()
@@ -380,7 +380,7 @@ class ResNetPlus(BaseModule):
             # ResNet stage
             x = res_layer(x)
             # 每一个resnet layer，后面跟一个att layer
-            x = self.att_layers[i](x)
+            # x = self.att_layers[i](x)
 
             if i in self.out_indices:
                 outs.append(x)
