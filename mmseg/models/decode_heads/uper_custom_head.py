@@ -33,7 +33,6 @@ class UPerCustomHead(BaseDecodeHead):
             for i in self.ea_idx:
                 ea = EA(
                     self.in_channels[i],
-                    stn_layer=i
                 )
                 self.ea_module.append(ea)
         # PSP Module
