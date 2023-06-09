@@ -23,7 +23,7 @@ class UpBlock(BaseModule):
 
         self.up_sample = build_upsample_layer(
             cfg=dict(scale_factor=scale_factor,
-                     mode='bilinear',
+                     type='bilinear',
                      align_corners=False))
         self.up_conv = ConvModule(
             in_channels,
@@ -82,29 +82,30 @@ class STN(BaseModule):
         )
         # 采用两层全连接层，回归出仿射变换所需的参数θ（6，）
         self.fc_loc = nn.Sequential(
-            # nn.Linear(10 * 3 * 3, 32)
+            nn.Linear(320, 32),
             build_activation_layer(act_cfg),
             nn.Linear(32, 2 * 3)
         )
 
         # Initialize the weights/bias with identity transformation
-        self.fc_loc[1].weight.data.zero_()
-        self.fc_loc[1].bias.data.copy_(torch.tensor([1, 0, 0, 0, 1, 0], dtype=torch.float))
+        self.fc_loc[2].weight.data.zero_()
+        self.fc_loc[2].bias.data.copy_(torch.tensor([1, 0, 0, 0, 1, 0], dtype=torch.float))
 
     def forward(self, x):
         """
             Input: (B, C, H, W)
         """
-        batch_size = x.size[0]
+        batch_size = x.size(0)
         # 提取输入图像中的特征
         xs = self.loc(x)
-        xs = xs.view(batch_size, 10 * xs.size[2] * xs.size[3])  # （B, 10 * H_xs * W_xs)
+        xs = xs.view(batch_size, 10 * xs.size(2) * xs.size(3))  # （B, 10 * H_xs * W_xs)
         # 回归theta参数
         # 以下三步对应与nn.Linear(10 * 3 * 3, 32)
-        weight = Parameter(torch.empty((xs.size[1], 32)))
-        bias = Parameter(torch.empty(32))
-        theta = F.linear(xs, weight, bias)
-        theta = self.fc_loc(theta)
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        # weight = Parameter(torch.empty((32, xs.size(1)))).to(device)
+        # bias = Parameter(torch.empty(32)).to(device)
+        # theta = F.linear(xs, weight, bias)
+        theta = self.fc_loc(xs)
         theta = theta.view(batch_size, 2, 3)  # (B, 2, 3)
         # Grid Generator
         grid = F.affine_grid(theta, x.size())  # (B, H_out, W_out, 2)
