@@ -43,9 +43,15 @@ class UpBlock(BaseModule):
         return x
 
 
+# 根据图片HW大小，修改STN所需参数的尺寸
+X_SIZE_0 = 320
+X_SIZE_1 = 80
+
+
 class STN(BaseModule):
     def __init__(self,
                  in_channels,
+                 layer=0,
                  conv_cfg=None,
                  act_cfg=None):
         super().__init__()
@@ -53,6 +59,10 @@ class STN(BaseModule):
             conv_cfg = dict(type='Conv2d')
         if act_cfg is None:
             act_cfg = dict(type='ReLU')
+        if layer is 0:
+            self.x_size = X_SIZE_0
+        else:
+            self.x_size = X_SIZE_1
         # loc 定义了两层卷积网络
         self.loc = nn.Sequential(
             # 卷积输出shape为(B,8,H_out,W_out)
@@ -82,7 +92,7 @@ class STN(BaseModule):
         )
         # 采用两层全连接层，回归出仿射变换所需的参数θ（6，）
         self.fc_loc = nn.Sequential(
-            nn.Linear(320, 32),
+            nn.Linear(self.x_size, 32),
             build_activation_layer(act_cfg),
             nn.Linear(32, 2 * 3)
         )
@@ -100,8 +110,8 @@ class STN(BaseModule):
         xs = self.loc(x)
         xs = xs.view(batch_size, 10 * xs.size(2) * xs.size(3))  # （B, 10 * H_xs * W_xs)
         # 回归theta参数
-        # 以下三步对应与nn.Linear(10 * 3 * 3, 32)
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        # 以下四步对应与nn.Linear(10 * 3 * 3, 32)，目前有bug，导致theta结果为Nan
+        # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         # weight = Parameter(torch.empty((32, xs.size(1)))).to(device)
         # bias = Parameter(torch.empty(32)).to(device)
         # theta = F.linear(xs, weight, bias)
@@ -117,6 +127,7 @@ class STN(BaseModule):
 class EA(BaseModule):
     def __init__(self,
                  in_channels,
+                 stn_layer,
                  conv_cfg=None):
         super().__init__()
         if conv_cfg is None:
@@ -127,7 +138,7 @@ class EA(BaseModule):
             in_channels=in_channels * 2,
             out_channels=2,
             kernel_size=1)
-        self.stn = STN(2)
+        self.stn = STN(2, layer=stn_layer)
         self.re_conv = build_conv_layer(
             cfg=conv_cfg,
             in_channels=2,
