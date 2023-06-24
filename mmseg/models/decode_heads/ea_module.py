@@ -7,7 +7,8 @@ from torch.nn import init
 from torch.nn.parameter import Parameter
 from mmcv.cnn import build_conv_layer, build_upsample_layer, ConvModule, build_activation_layer
 from mmengine.model import BaseModule
-from ..utils.attention import AttLayer, SKLayer
+# from ..utils.attention import AttLayer, SKLayer
+
 
 class UpBlock(BaseModule):
     def __init__(self,
@@ -142,8 +143,8 @@ class EA(BaseModule):
         #     out_channels=in_channels,
         #     kernel_size=1)
 
-        # 初始化swin内部的attLayer
-        self.att_layer = AttLayer(in_channels=in_channels)
+        # 初始化ea层中的attLayer
+        # self.att_layer = AttLayer(in_channels=in_channels)
 
     def forward(self, x, x_low):
         """
@@ -165,6 +166,6 @@ class EA(BaseModule):
         out = x - out
 
         # # att流程
-        out = self.att_layer(out)
+        # out = self.att_layer(out)
 
         return out
