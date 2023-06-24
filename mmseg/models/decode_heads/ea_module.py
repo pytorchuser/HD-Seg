@@ -7,7 +7,7 @@ from torch.nn import init
 from torch.nn.parameter import Parameter
 from mmcv.cnn import build_conv_layer, build_upsample_layer, ConvModule, build_activation_layer
 from mmengine.model import BaseModule
-
+from ..utils.attention import AttLayer, SKLayer
 
 class UpBlock(BaseModule):
     def __init__(self,
@@ -91,8 +91,8 @@ class STN(BaseModule):
         )
 
         # Initialize the weights/bias with identity transformation
-        self.fc_loc[1].weight.data.zero_()
-        self.fc_loc[1].bias.data.copy_(torch.tensor([1, 0, 0, 0, 1, 0], dtype=torch.float))
+        # self.fc_loc[1].weight.data.zero_()
+        # self.fc_loc[1].bias.data.copy_(torch.tensor([1, 0, 0, 0, 1, 0], dtype=torch.float))
 
     def forward(self, x):
         """
@@ -114,11 +114,11 @@ class STN(BaseModule):
         theta = F.linear(xs, weight, bias)
 
         theta = self.fc_loc(theta)
-        theta = theta.view(batch_size, 2, 3)  # (B, 2, 3)
+        theta = theta.view(batch_size, 2, 3)  # (B, C, 3)
         # Grid Generator
-        grid = F.affine_grid(theta, x.size())  # (B, H_out, W_out, 2)
+        grid = F.affine_grid(theta, x.size())  # (B, H_out, W_out, C)
         # Bilinear Sampler
-        warp = F.grid_sample(x, grid)  # (B, 2, H_out, W_out)
+        warp = F.grid_sample(x, grid)  # (B, C, H_out, W_out)
         return warp
 
 
@@ -133,14 +133,17 @@ class EA(BaseModule):
         self.c_2_conv = build_conv_layer(
             cfg=conv_cfg,
             in_channels=in_channels * 2,
-            out_channels=2,
-            kernel_size=1)
-        self.stn = STN(2)
-        self.re_conv = build_conv_layer(
-            cfg=conv_cfg,
-            in_channels=2,
             out_channels=in_channels,
             kernel_size=1)
+        self.stn = STN(in_channels)
+        # self.re_conv = build_conv_layer(
+        #     cfg=conv_cfg,
+        #     in_channels=2,
+        #     out_channels=in_channels,
+        #     kernel_size=1)
+
+        # 初始化swin内部的attLayer
+        self.att_layer = AttLayer(in_channels=in_channels)
 
     def forward(self, x, x_low):
         """
@@ -156,7 +159,12 @@ class EA(BaseModule):
         # 过STN
         out = self.stn(out)
         # 将管道数改为原图大小
-        out = self.re_conv(out)
+        # out = self.re_conv(out)
         # 用原图-STN输出得到最后的输出
+        # x = self.stn(x)
         out = x - out
+
+        # # att流程
+        out = self.att_layer(out)
+
         return out

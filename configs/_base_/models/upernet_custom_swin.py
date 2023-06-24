@@ -32,7 +32,7 @@ model = dict(
         is_fcm=False,
         # is_res_ram=False,
         # is_swin_ram=False,
-        # ram_simple=True,
+        # ram_simple=False,
         # 预训练时输入图像的大小，默认224
         pretrain_img_size=224,
         # 特征维度，默认96

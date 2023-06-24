@@ -196,7 +196,7 @@ class ResNetPlus(BaseModule):
         self._make_stem_layer(in_channels, stem_channels)
 
         self.res_layers = []
-        self.att_layers = ModuleList()
+        # self.att_layers = ModuleList()
         for i, num_blocks in enumerate(self.stage_blocks):
             stride = strides[i]
             dilation = dilations[i]
