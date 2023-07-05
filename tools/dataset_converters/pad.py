@@ -6,10 +6,10 @@ import os.path as osp
 import mmcv
 from mmengine.utils import mkdir_or_exist
 
-BASE_DIR = '../../data/OCT_Manual_Delineations-2018_June_29(HCMS)/org'
+BASE_DIR = '../../data/Duke_OCT_dataset2015_BOE_Chiu'
 IN_DIR = BASE_DIR + '/new'
 OUT_DIR = BASE_DIR + '/pad'
-SIZE = (512, 1024)  # img(h,w)
+SIZE = (512, 536)  # img(h,w)
 PAD_VAL = 0
 PAD_MODE = 'constant'
 

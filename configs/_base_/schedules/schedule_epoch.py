@@ -34,7 +34,7 @@ param_scheduler = [
 ]
 # training schedule by epoch
 train_cfg = dict(
-    type='EpochBasedTrainLoop', max_epochs=100, val_begin=20, val_interval=1)
+    type='EpochBasedTrainLoop', max_epochs=800, val_begin=10, val_interval=1)
 val_cfg = dict(type='ValLoop')
 test_cfg = dict(type='TestLoop')
 # 默认钩子(hook)配置
@@ -42,7 +42,7 @@ default_hooks = dict(
     # 记录迭代过程中花费的时间
     timer=dict(type='IterTimerHook'),
     # 从'Runner'的不同组件收集和写入日志, 每50次迭代打印一次日志
-    logger=dict(type='LoggerHook', interval=46, log_metric_by_epoch=True),
+    logger=dict(type='LoggerHook', interval=9, log_metric_by_epoch=True),
     # 更新优化器中的一些超参数，例如学习率
     param_scheduler=dict(type='ParamSchedulerHook'),
     # save_best = ['acc', 'top', 'AR@', 'auc', 'precision', 'mAP', 'mDice', 'mIoU', 'mAcc', 'aAcc']
