@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from mmcv.cnn import build_conv_layer, build_activation_layer
+from mmcv.cnn import build_conv_layer, build_activation_layer, build_norm_layer, ConvModule
 from mmengine.model import BaseModule
 
 from mmseg.models.utils import StripPooling
@@ -47,6 +47,43 @@ class ChannelAtt(BaseModule):
         channel_att_sum = self.incr(sum_pool)
         att = torch.sigmoid(channel_att_sum).unsqueeze(2).unsqueeze(3).expand_as(avg_pool)
         return att
+
+
+class ESChannelAtt(BaseModule):
+    """
+        input (B, C, H, W)
+        output (B, C, H, W)
+    """
+    def __init__(self,
+                 in_channels,
+                 r=2,
+                 conv_cfg=None, act_cfg=None):
+        super().__init__()
+        if act_cfg is None:
+            act_cfg = dict(type='ReLU')
+        if conv_cfg is None:
+            conv_cfg = dict(type='Conv2d')
+
+        self.conv = nn.Sequential(
+            build_conv_layer(
+                conv_cfg,
+                in_channels,
+                in_channels // r,
+                1),
+            build_activation_layer(act_cfg),
+            build_conv_layer(
+                conv_cfg,
+                in_channels // r,
+                in_channels,
+                1)
+        )
+
+    def forward(self, x):
+        avg_pool = F.avg_pool2d(x, (x.size(2), x.size(3)), stride=(x.size(2), x.size(3)))
+        out1 = self.conv(avg_pool)
+        out1 = torch.sigmoid(out1)
+        out = out1 * x
+        return out
 
 
 class BranchAtt(BaseModule):
@@ -140,3 +177,98 @@ class SKLayer(BaseModule):
         out = swin + res
         return out
 
+
+class Residual(BaseModule):
+    def __init__(self,
+                 in_channels,
+                 out_channels, conv_cfg=None, act_cfg=None, norm_cfg=None):
+        super().__init__()
+
+        if norm_cfg is None:
+            norm_cfg = dict(type='BN', requires_grad=True)
+        if act_cfg is None:
+            act_cfg = dict(type='ReLU')
+        if conv_cfg is None:
+            conv_cfg = dict(type='Conv2d')
+
+        self.skip_layer = build_conv_layer(
+            conv_cfg,
+            in_channels,
+            out_channels,
+            1)
+
+        self.conv = nn.Sequential(
+            build_norm_layer(norm_cfg, in_channels)[1],
+            build_activation_layer(act_cfg),
+            build_conv_layer(
+                conv_cfg,
+                in_channels,
+                out_channels // 2,
+                1),
+            build_norm_layer(norm_cfg, out_channels // 2)[1],
+            build_activation_layer(act_cfg),
+            build_conv_layer(
+                conv_cfg,
+                out_channels // 2,
+                out_channels // 2,
+                3),
+            build_norm_layer(norm_cfg, out_channels // 2)[1],
+            build_activation_layer(act_cfg),
+            build_conv_layer(
+                conv_cfg,
+                out_channels // 2,
+                out_channels,
+                1),
+        )
+
+    def forward(self, x):
+        out_1 = self.skip_layer(x)
+        out_2 = self.conv(x)
+        out = out_1 + out_2
+        return out
+
+
+class BiFLayer(BaseModule):
+    """
+        input (B, C, H, W)
+        https://github.com/Rayicer/TransFuse/blob/main/imgs/model.png
+    """
+    def __init__(self,
+                 in_channels,
+                 c_att_r=2,
+                 conv_cfg=None,
+                 act_cfg=None,
+                 norm_cfg=None):
+        super().__init__()
+        if norm_cfg is None:
+            norm_cfg = dict(type='BN', requires_grad=True)
+        if act_cfg is None:
+            act_cfg = dict(type='ReLU')
+        if conv_cfg is None:
+            conv_cfg = dict(type='Conv2d')
+        self.w_conv = ConvModule(
+            in_channels,
+            in_channels,
+            3,
+            padding=1,
+            conv_cfg=conv_cfg,
+            norm_cfg=norm_cfg,
+            act_cfg=act_cfg)
+        self.strip_pool = StripPooling(in_channels)
+        self.channel_att = ESChannelAtt(in_channels, c_att_r)
+        self.residual = Residual(in_channels * 3, in_channels)
+
+    def forward(self, swin_out, res_out):
+        # bilinear pooling
+        w_product = swin_out * res_out
+        w_product = self.w_conv(w_product)
+
+        # spatial attention for resnet
+        g_out = self.strip_pool(res_out)
+
+        # channel attention for swin
+        t_out = self.channel_att(swin_out)
+
+        # residual
+        out = self.residual(torch.cat([g_out, t_out, w_product], dim=1))
+        return out

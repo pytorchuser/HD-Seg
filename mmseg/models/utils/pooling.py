@@ -8,7 +8,7 @@ from mmengine.model import BaseModule
 class StripPooling(BaseModule):
     def __init__(self,
                  in_channels,
-                 pool_size,
+                 pool_size=None,
                  kernel_size=7,
                  norm_cfg=None,
                  act_cfg=None,

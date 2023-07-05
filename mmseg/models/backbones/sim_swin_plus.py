@@ -18,7 +18,7 @@ from mmengine.utils import to_2tuple
 
 from mmseg.registry import MODELS
 from ..backbones.resnet_plus import ResNetPlus
-from ..utils.attention import AttLayer, SKLayer
+from ..utils.attention import AttLayer, SKLayer, BiFLayer
 from ..utils.embed import PatchEmbed, PatchMerging
 
 
@@ -794,7 +794,7 @@ class SIMSwinTransformerPlus(BaseModule):
         )
         # 初始化swin stages
         self.stages = ModuleList()
-        self.sk_layers = ModuleList()
+        self.bif_layers = ModuleList()
         in_channels = embed_dims
         for i in range(num_layers):
             # 下采样
@@ -835,8 +835,10 @@ class SIMSwinTransformerPlus(BaseModule):
             self.stages.append(stage)
 
             # 每个stage对应sk layer
-            sk_layer = SKLayer(in_channels)
-            self.sk_layers.append(sk_layer)
+            bif_layer = BiFLayer(in_channels, 2 ** (i-1))
+            self.bif_layers.append(bif_layer)
+            # sk_layer = SKLayer(in_channels)
+            # self.sk_layers.append(sk_layer)
 
             if downsample:
                 in_channels = downsample.out_channels
@@ -978,7 +980,7 @@ class SIMSwinTransformerPlus(BaseModule):
         outs = []
         i = 0
         for swin, res in zip(swin_outs, res_out):
-            out = self.sk_layers[i](swin, res)
+            out = self.bif_layers[i](swin, res)
             outs.append(out)
             i = i + 1
         return outs
