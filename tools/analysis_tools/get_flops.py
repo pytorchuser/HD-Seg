@@ -19,16 +19,18 @@ try:
 except ImportError:
     raise ImportError('Please upgrade mmengine >= 0.6.0 to use this script.')
 
+CONFIG = '../../configs/unet/unet-s5-d16_pspnet_4xb4-ce-1.0-dice-3.0-40k_hrf-256x256.py'
+SIZE = [512, 512]
 
 def parse_args():
     parser = argparse.ArgumentParser(
         description='Get the FLOPs of a segmentor')
-    parser.add_argument('config', help='train config file path')
+    parser.add_argument('--config', default=CONFIG, help='train config file path')
     parser.add_argument(
         '--shape',
         type=int,
         nargs='+',
-        default=[2048, 1024],
+        default=SIZE,
         help='input image size')
     parser.add_argument(
         '--cfg-options',

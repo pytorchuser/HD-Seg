@@ -41,7 +41,7 @@ class UPerCustomHead(BaseDecodeHead):
         # 初始化对应的bottleneck卷积模型列表
         self.fe_modules, self.bottleneck_modules = self.init_fe_bottleneck_modules(pool_scales)
         # att，跟在特殊处理层（ppm或ufe）后，C全都统一成self.channels，使用同一个att层处理就行
-        self.att_layer = AttLayer(in_channels=self.channels)
+        # self.att_layer = AttLayer(in_channels=self.channels)
         # FPN Module
         self.lateral_convs = nn.ModuleList()
         self.fpn_convs = nn.ModuleList()
@@ -104,14 +104,14 @@ class UPerCustomHead(BaseDecodeHead):
             # 拼完后的结构再进行一次 3*3的卷积，把输出的channel从2816给降维到512，返回结果到UPerHead的 forward中
             output = self.bottleneck_modules[module_idx](psp_outs)
             # att操作
-            output = self.att_layer(output)
+            # output = self.att_layer(output)
             return output
         # self.logger.info(f'fe_forward执行一次耗时：{time.time() - t}, 累计总时长：{time.time() - self.t}')
         elif module_type == 'UFE':
             psp_outs.extend(self.fe_modules[module_idx](x))
             output = self.bottleneck_modules[module_idx](psp_outs[-1])
             # att操作
-            output = self.att_layer(output)
+            # output = self.att_layer(output)
             return output
 
     def _forward_feature(self, inputs):

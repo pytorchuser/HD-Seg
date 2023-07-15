@@ -46,6 +46,7 @@ class ChannelAtt(BaseModule):
 
         channel_att_sum = self.incr(sum_pool)
         att = torch.sigmoid(channel_att_sum).unsqueeze(2).unsqueeze(3).expand_as(avg_pool)
+        att = att * x
         return att
 
 
@@ -211,7 +212,8 @@ class Residual(BaseModule):
                 conv_cfg,
                 out_channels // 2,
                 out_channels // 2,
-                3),
+                3,
+                padding=1),
             build_norm_layer(norm_cfg, out_channels // 2)[1],
             build_activation_layer(act_cfg),
             build_conv_layer(
@@ -255,7 +257,8 @@ class BiFLayer(BaseModule):
             norm_cfg=norm_cfg,
             act_cfg=act_cfg)
         self.strip_pool = StripPooling(in_channels)
-        self.channel_att = ESChannelAtt(in_channels, c_att_r)
+        # self.channel_att = ESChannelAtt(in_channels, c_att_r)
+        self.channel_att = ChannelAtt(in_channels)
         self.residual = Residual(in_channels * 3, in_channels)
 
     def forward(self, swin_out, res_out):

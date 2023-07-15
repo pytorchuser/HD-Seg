@@ -11,8 +11,8 @@ from scipy.io import loadmat
 
 # 添加路径，metal文件夹下存放mental类的特征的多个.mat文件
 MAT_DIR = '../../data/Duke_OCT_dataset2015_BOE_Chiu/mat'
-OUT_DIR_SEG = '../../data/Duke_OCT_dataset2015_BOE_Chiu/annotations'
-OUT_DIR_ORG = '../../data/Duke_OCT_dataset2015_BOE_Chiu/images'
+OUT_DIR_SEG = '../../data/Duke_OCT_dataset2015_BOE_Chiu/annotations1'
+OUT_DIR_ORG = '../../data/Duke_OCT_dataset2015_BOE_Chiu/images1'
 fluid_class = 9
 
 

@@ -1,32 +1,19 @@
 _base_ = [
-    '../_base_/models/upernet_custom_swin.py', '../_base_/datasets/oct_duke2015.py',
+    '../_base_/models/upernet_custom_res.py', '../_base_/datasets/oct_duke2015.py',
     '../_base_/default_runtime.py', '../_base_/schedules/schedule_epoch.py'
 ]
 # load_from = '../pth/upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210531_112542-e380ad3e.pth'  # noqa
-load_from = '../pth/upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210531_112542-e380ad3e.pth'  # noqa
+# load_from = '../pth/upernet_r50_512x512_160k_ade20k_20200615_184328-8534de8d.pth'  # noqa
 NUM_CLASSES = 10
 
 data_preprocessor = dict(size=(512, 512))
 
 model = dict(
     data_preprocessor=data_preprocessor,
-    backbone=dict(
-        # init_cfg=dict(type='Pretrained', checkpoint=checkpoint_file),
-        embed_dims=96,
-        depths=[2, 2, 6, 2],
-        num_heads=[3, 6, 12, 24],
-        window_size=7,
-        patch_size=4,
-        strides=(4, 2, 2, 2),
-        qkv_bias=True,
-        qk_scale=True,
-        use_abs_pos_embed=False,
-        # drop_path_rate=0.3,
-        # attn_drop_rate=0.3,
-        patch_norm=True),
+
     decode_head=dict(
-                     in_channels=[96, 192, 384, 768],
-                     # in_channels=[128, 256, 512, 1024],
+                     in_channels=[128, 256, 512, 1024],
+                     # in_channels=[256, 512, 1024, 2048],
                      num_classes=NUM_CLASSES, dropout_ratio=0.1,
                      loss_decode=[dict(type='CrossEntropyLoss', loss_name='loss_ce', loss_weight=1.0),
                      dict(type='DiceLoss', loss_name='loss_dice', loss_weight=1.0)],
@@ -34,32 +21,32 @@ model = dict(
                      # msc_module_cfg=[
                      #     dict(type='PPM', layer_idx=0), dict(type='PPM', layer_idx=1),
                      #     dict(type='PPM', layer_idx=2), dict(type='PPM', layer_idx=3)]
-                     do_ea=True,
+                     do_ea=False,
                      msc_module_cfg=[
-                        dict(type='UFE', layer_idx=0, ufe_cfg=dict(
-                            num_stages=4,
-                            strides=(1, 1, 1, 1),
-                            enc_num_convs=(1, 1, 1, 1),
-                            dec_num_convs=(1, 1, 1),
-                            downsamples=(True, True, True),
-                            enc_dilations=(1, 1, 1, 1),
-                            dec_dilations=(1, 1, 1),)),
-                        dict(type='UFE', layer_idx=1, ufe_cfg=dict(
-                            num_stages=3,
-                            strides=(1, 1, 1),
-                            enc_num_convs=(1, 1, 1),
-                            dec_num_convs=(1, 1),
-                            downsamples=(True, True),
-                            enc_dilations=(1, 1, 1),
-                            dec_dilations=(1, 1),)),
-                        dict(type='UFE', layer_idx=2, ufe_cfg=dict(
-                            num_stages=2,
-                            strides=(1, 1),
-                            enc_num_convs=(1, 1),
-                            dec_num_convs=([1]),
-                            downsamples=([True]),
-                            enc_dilations=(1, 1),
-                            dec_dilations=([1]),)),
+                        # dict(type='UFE', layer_idx=0, ufe_cfg=dict(
+                        #     num_stages=4,
+                        #     strides=(1, 1, 1, 1),
+                        #     enc_num_convs=(1, 1, 1, 1),
+                        #     dec_num_convs=(1, 1, 1),
+                        #     downsamples=(True, True, True),
+                        #     enc_dilations=(1, 1, 1, 1),
+                        #     dec_dilations=(1, 1, 1),)),
+                        # dict(type='UFE', layer_idx=1, ufe_cfg=dict(
+                        #     num_stages=3,
+                        #     strides=(1, 1, 1),
+                        #     enc_num_convs=(1, 1, 1),
+                        #     dec_num_convs=(1, 1),
+                        #     downsamples=(True, True),
+                        #     enc_dilations=(1, 1, 1),
+                        #     dec_dilations=(1, 1),)),
+                        # dict(type='UFE', layer_idx=2, ufe_cfg=dict(
+                        #     num_stages=2,
+                        #     strides=(1, 1),
+                        #     enc_num_convs=(1, 1),
+                        #     dec_num_convs=([1]),
+                        #     downsamples=([True]),
+                        #     enc_dilations=(1, 1),
+                        #     dec_dilations=([1]),)),
                         dict(type='PPM', layer_idx=3)
                      ]
                      # msc_module_cfg=[
@@ -68,7 +55,7 @@ model = dict(
                      #     dict(type='PPM', layer_idx=1), dict(type='PPM', layer_idx=2),
                      #     dict(type='PPM', layer_idx=3)]
                      ),
-    auxiliary_head=dict(in_channels=384, dropout_ratio=0.1, num_classes=NUM_CLASSES)
+    auxiliary_head=dict(in_channels=512, dropout_ratio=0.1, num_classes=NUM_CLASSES)
 )
 
 # AdamW optimizer, no weight decay for position embedding & layer norm in backbone
