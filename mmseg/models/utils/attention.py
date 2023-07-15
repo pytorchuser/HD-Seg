@@ -233,10 +233,14 @@ class Residual(BaseModule):
 class BiFLayer(BaseModule):
     """
         input (B, C, H, W)
+        output (B, C, H, W)
         https://github.com/Rayicer/TransFuse/blob/main/imgs/model.png
+        in_channels: swin网络channels
+        res_channels: res网络channels
     """
     def __init__(self,
                  in_channels,
+                 res_channels,
                  c_att_r=2,
                  conv_cfg=None,
                  act_cfg=None,
@@ -248,6 +252,12 @@ class BiFLayer(BaseModule):
             act_cfg = dict(type='ReLU')
         if conv_cfg is None:
             conv_cfg = dict(type='Conv2d')
+        self.res_conv = build_conv_layer(
+            conv_cfg,
+            res_channels,
+            in_channels,
+            1
+        )
         self.w_conv = ConvModule(
             in_channels,
             in_channels,
@@ -262,6 +272,8 @@ class BiFLayer(BaseModule):
         self.residual = Residual(in_channels * 3, in_channels)
 
     def forward(self, swin_out, res_out):
+        # 改变res网络结果的channel数
+        res_out = self.res_conv(res_out)
         # bilinear pooling
         w_product = swin_out * res_out
         w_product = self.w_conv(w_product)

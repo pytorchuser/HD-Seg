@@ -787,10 +787,11 @@ class SIMSwinTransformerPlus(BaseModule):
             x.item() for x in torch.linspace(0, drop_path_rate, total_depth)
         ]
         # 初始化resnet_plus
+        res_channels = 64
         self.resnet_plus = ResNetPlus(
             depth=50,
-            stem_channels=24,
-            base_channels=24,
+            stem_channels=res_channels,
+            base_channels=res_channels,
         )
         # 初始化swin stages
         self.stages = ModuleList()
@@ -835,7 +836,7 @@ class SIMSwinTransformerPlus(BaseModule):
             self.stages.append(stage)
 
             # 每个stage对应sk layer
-            bif_layer = BiFLayer(in_channels, 2 ** i)
+            bif_layer = BiFLayer(in_channels, (res_channels * 4) * 2 ** i, 2 ** i)
             self.bif_layers.append(bif_layer)
             # sk_layer = SKLayer(in_channels)
             # self.sk_layers.append(sk_layer)
