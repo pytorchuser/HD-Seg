@@ -835,7 +835,7 @@ class SIMSwinTransformerPlus(BaseModule):
             self.stages.append(stage)
 
             # 每个stage对应sk layer
-            bif_layer = BiFLayer(in_channels, 2 ** (i-1))
+            bif_layer = BiFLayer(in_channels, 2 ** i)
             self.bif_layers.append(bif_layer)
             # sk_layer = SKLayer(in_channels)
             # self.sk_layers.append(sk_layer)

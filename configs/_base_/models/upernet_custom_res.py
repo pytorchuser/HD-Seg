@@ -23,45 +23,18 @@ model = dict(
     # 加载使用 ImageNet 预训练的主干网络
     pretrained=None,
     backbone=dict(
-        # 主干网络的类别，更多细节请参考 mmseg/models/backbones/swin.py
-        # type='SwinTransformer',
-        # type='SIMSwinTransformer',
-        type='SIMSwinTransformerPlus',
-        # 是否使用sim模块
-        is_sim=False,
-        is_fcm=False,
-        # is_res_ram=False,
-        # is_swin_ram=False,
-        # ram_simple=False,
-        # 预训练时输入图像的大小，默认224
-        pretrain_img_size=224,
-        # 特征维度，默认96
-        embed_dims=96,
-        # 块大小，默认4
-        patch_size=4,
-        # 窗口大小，默认7
-        window_size=7,
-        # mlp比例，默认4
-        mlp_ratio=4,
-        # 每个swin Transformer stage的深度
-        depths=[2, 2, 6, 2],
-        num_heads=[3, 6, 12, 24],
-        strides=(4, 2, 2, 2),
-        # 每个状态(stage)产生的特征图输出的索引
+        type='ResNetV1c',
+        depth=50,
+        stem_channels=32,
+        base_channels=32,
+        num_stages=4,
         out_indices=(0, 1, 2, 3),
-        # 如果为True，则为query、key、value添加一个可学习偏差
-        qkv_bias=True,
-        # 如果设置，覆盖默认的head_dim qk刻度** -0.5
-        qk_scale=None,
-        patch_norm=True,
-        drop_rate=0.,
-        attn_drop_rate=0.,
-        # 随机深度率，默认0.1
-        drop_path_rate=0.1,
-        use_abs_pos_embed=False,
-        act_cfg=dict(type='GELU'),
-        # 归一化层(norm layer)的配置项
-        norm_cfg=backbone_norm_cfg),
+        dilations=(1, 1, 1, 1),
+        strides=(1, 2, 2, 2),
+        norm_cfg=norm_cfg,
+        norm_eval=False,
+        style='pytorch',
+        contract_dilation=True),
     decode_head=dict(
         # 解码头(decode head)的类别。可用选项请参 mmseg/models/decode_heads
         type='UPerCustomHead',

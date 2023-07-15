@@ -173,8 +173,8 @@ class PatchEmbed(BaseModule):
             dilation=dilation,
             bias=bias)
 
-        self.sp_pooling = StripPooling(3, (20, 12))
-        self.max_pooling = nn.MaxPool2d(3, 2)
+        # self.sp_pooling = StripPooling(3, (20, 12))
+        # self.max_pooling = nn.MaxPool2d(3, 2)
         if norm_cfg is not None:
             self.norm = build_norm_layer(norm_cfg, embed_dims)[1]
         else:
