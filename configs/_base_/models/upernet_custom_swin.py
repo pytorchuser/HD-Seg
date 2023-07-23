@@ -38,7 +38,7 @@ model = dict(
         # 特征维度，默认96
         embed_dims=96,
         # 块大小，默认4
-        patch_size=4,
+        patch_size=8,
         # 窗口大小，默认7
         window_size=7,
         # mlp比例，默认4
