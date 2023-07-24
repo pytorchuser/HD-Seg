@@ -230,7 +230,7 @@ class Residual(BaseModule):
         return out
 
 
-class BiFLayer(BaseModule):
+class FamLayer(BaseModule):
     """
         input (B, C, H, W)
         output (B, C, H, W)
@@ -279,10 +279,12 @@ class BiFLayer(BaseModule):
         w_product = self.w_conv(w_product)
 
         # spatial attention for resnet
+        res_out = self.channel_att(res_out)
         g_out = self.strip_pool(res_out)
 
         # channel attention for swin
-        t_out = self.channel_att(swin_out)
+        swin_out = self.channel_att(swin_out)
+        t_out = self.strip_pool(swin_out)
 
         # residual
         out = self.residual(torch.cat([g_out, t_out, w_product], dim=1))

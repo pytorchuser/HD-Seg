@@ -34,7 +34,7 @@ model = dict(
                      # msc_module_cfg=[
                      #     dict(type='PPM', layer_idx=0), dict(type='PPM', layer_idx=1),
                      #     dict(type='PPM', layer_idx=2), dict(type='PPM', layer_idx=3)]
-                     do_ea=False,
+                     do_ba=False,
                      msc_module_cfg=[
                         dict(type='UFE', layer_idx=0, ufe_cfg=dict(
                             num_stages=4,

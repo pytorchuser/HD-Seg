@@ -124,18 +124,18 @@ class StripPooling(BaseModule):
         self.re_conv = nn.Sequential(
             build_conv_layer(
                 conv_cfg,
-                inter_channels,
+                inter_channels * 2,
                 in_channels,
                 kernel_size=1,
                 bias=False),
             build_norm_layer(norm_cfg, in_channels)[1],
+            build_activation_layer(act_cfg)
         )
 
     def forward(self, x):
         _, _, h, w = x.size()
         # 改变管道大小的卷积
-        x1 = x
-        # x1 = x2 = self.c_conv(x)
+        x1 = x2 = self.c_conv(x)
         # 计算平均和最大值
         avg_out = torch.mean(x1, dim=1, keepdim=True)
         max_out, _ = torch.max(x1, dim=1, keepdim=True)
@@ -151,18 +151,13 @@ class StripPooling(BaseModule):
         # x1_1 = F.interpolate(self.pool_1_conv(x1), (h, w), **self.up_cfg)
         # # 将x1经过以上不同流程的值相加
         # x1 = self.conv(F.relu_(x1_0 + x1_1 + x1_2))
-
-        # # x2 池化-卷积-扩充
-        # x2_h = F.interpolate(self.pool_h_conv(x2), (h, w), **self.up_cfg)
-        # # x2_w = F.interpolate(self.pool_w_conv(x2), (h, w), **self.up_cfg)
-        # # 将x2经过以上不同流程的值相加
-        # x2 = self.conv(F.relu_(x2_h))
-        # # x2 = self.conv(F.relu_(x2_h + x2_w))
-        # # 将x1 x2拼在一起并还原管道数
-        # out1 = torch.cat([x1, x2], dim=1)
-        # out = self.re_conv(x1)
-        out = x1
-
+        # x2 池化-卷积-扩充
+        x2_h = F.interpolate(self.pool_h_conv(x2), (h, w), **self.up_cfg)
+        x2_w = F.interpolate(self.pool_w_conv(x2), (h, w), **self.up_cfg)
+        # 将x2经过以上不同流程的值相加
+        x2 = self.conv(F.relu_(x2_h + x2_w))
+        # 将x1 x2拼在一起并还原管道数
+        out = self.re_conv(torch.cat([x1, x2], dim=1))
         # out与input原值直接相加
         # out = F.relu_(x + out)
         return out

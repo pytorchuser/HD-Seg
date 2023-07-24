@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import init
 from torch.nn.parameter import Parameter
-from mmcv.cnn import build_conv_layer, build_upsample_layer, ConvModule, build_activation_layer
+from mmcv.cnn import build_conv_layer, build_upsample_layer, ConvModule, build_activation_layer, build_norm_layer
 from mmengine.model import BaseModule
 # from ..utils.attention import AttLayer, SKLayer
 
@@ -123,11 +123,17 @@ class STN(BaseModule):
         return warp
 
 
-class EA(BaseModule):
+class BA(BaseModule):
     def __init__(self,
                  in_channels,
+                 act_cfg=None,
+                 norm_cfg=None,
                  conv_cfg=None):
         super().__init__()
+        if norm_cfg is None:
+            norm_cfg = dict(type='BN', requires_grad=True)
+        if act_cfg is None:
+            act_cfg = dict(type='ReLU')
         if conv_cfg is None:
             conv_cfg = dict(type='Conv2d')
         self.up_sample = UpBlock(in_channels * 2)
@@ -145,6 +151,17 @@ class EA(BaseModule):
 
         # 初始化ea层中的attLayer
         # self.att_layer = AttLayer(in_channels=in_channels)
+
+        self.re_2_conv = nn.Sequential(
+            build_conv_layer(
+                conv_cfg,
+                in_channels * 2,
+                in_channels,
+                kernel_size=1,
+                bias=False),
+            build_norm_layer(norm_cfg, in_channels)[1],
+            build_activation_layer(act_cfg)
+        )
 
     def forward(self, x, x_low):
         """
@@ -164,6 +181,9 @@ class EA(BaseModule):
         # 用原图-STN输出得到最后的输出
         # x = self.stn(x)
         out = x - out
+
+        out = torch.cat([x, out], dim=1)
+        out = self.re_2_conv(out)
 
         # # att流程
         # out = self.att_layer(out)

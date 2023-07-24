@@ -8,7 +8,7 @@ from ..builder import HEADS
 from .decode_head import BaseDecodeHead
 from .psp_head import PPM
 from .ufe_module import UFE
-from .ea_module import EA
+from .ba_module import BA
 from ..utils.attention import AttLayer
 
 
@@ -27,15 +27,15 @@ class UPerCustomHead(BaseDecodeHead):
     def __init__(self, pool_scales=(1, 2, 3, 6), **kwargs):
         super(UPerCustomHead, self).__init__(
             input_transform='multiple_select', **kwargs)
-        # TODO EA Module, 只在最浅两层做
-        if self.do_ea:
-            self.ea_idx = [0, 1]
-            self.ea_module = nn.ModuleList()
-            for i in self.ea_idx:
-                ea = EA(
+        # TODO BA Module, 只在最浅两层做
+        if self.do_ba:
+            self.ba_idx = [0, 1]
+            self.ba_module = nn.ModuleList()
+            for i in self.ba_idx:
+                ba = BA(
                     self.in_channels[i],
                 )
-                self.ea_module.append(ea)
+                self.ba_module.append(ba)
         # PSP Module
         # 读取配置文件的参数，初始化PPM或其他(UFE)处理模型列表
         # 初始化对应的bottleneck卷积模型列表
@@ -129,7 +129,7 @@ class UPerCustomHead(BaseDecodeHead):
         inputs = self._transform_inputs(inputs)
 
         # TODO 此处添加EA操作，对原始的inputs进行
-        if self.do_ea:
+        if self.do_ba:
             ea_inputs = []
             for idx in self.ea_idx:
                 ea = self.ea_module[idx](inputs[idx], inputs[idx + 1])
