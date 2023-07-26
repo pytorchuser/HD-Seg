@@ -46,8 +46,8 @@ class ChannelAtt(BaseModule):
 
         channel_att_sum = self.incr(sum_pool)
         att = torch.sigmoid(channel_att_sum).unsqueeze(2).unsqueeze(3).expand_as(avg_pool)
-        att = att * x
-        return att
+        att_out = att * x
+        return att, att_out
 
 
 class ESChannelAtt(BaseModule):
@@ -147,7 +147,7 @@ class AttLayer(BaseModule):
 
     def forward(self, x):
         # 1。channel att
-        c_att = self.channel_att(x)
+        _, c_att = self.channel_att(x)
         att = c_att * x
         # 2。空间 att
         att = self.strip_pool(att)
@@ -267,24 +267,34 @@ class FamLayer(BaseModule):
             norm_cfg=norm_cfg,
             act_cfg=act_cfg)
         self.strip_pool = StripPooling(in_channels)
+        # self.strip_pool0 = StripPooling(in_channels)
+        # self.strip_pool1 = StripPooling(in_channels)
         # self.channel_att = ESChannelAtt(in_channels, c_att_r)
         self.channel_att = ChannelAtt(in_channels)
+        # self.channel_att0 = ChannelAtt(in_channels)
+        # self.channel_att1 = ChannelAtt(in_channels)
         self.residual = Residual(in_channels * 3, in_channels)
 
     def forward(self, swin_out, res_out):
         # 改变res网络结果的channel数
         res_out = self.res_conv(res_out)
+        # channel attention for swin
+        swin_att, t_out = self.channel_att(swin_out)
+        # spatial attention for resnet
+        res_strip, g_out = self.strip_pool(res_out)
         # bilinear pooling
-        w_product = swin_out * res_out
+        # w_product = swin_out * res_out
+        # (1,1,c) * (h,w,1)
+        w_product = swin_att * res_strip
         w_product = self.w_conv(w_product)
 
         # spatial attention for resnet
-        # res_out = self.channel_att(res_out)
-        g_out = self.strip_pool(res_out)
+        # res_out = self.channel_att0(res_out)
+        # g_out = self.strip_pool0(res_out)
 
         # channel attention for swin
-        # swin_out = self.channel_att(swin_out)
-        t_out = self.strip_pool(swin_out)
+        # swin_out = self.channel_att1(swin_out)
+        # t_out = self.strip_pool1(swin_out)
 
         # residual
         out = self.residual(torch.cat([g_out, t_out, w_product], dim=1))

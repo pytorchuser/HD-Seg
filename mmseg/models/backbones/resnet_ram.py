@@ -64,7 +64,7 @@ class RamLayer(BaseModule):
                 x = x + net_out
                 # 1。channel att
                 # sum分别走三个pool+mlp，三个结果相加后走sigmoid
-                att = self.channel_att(x)
+                _, att = self.channel_att(x)
                 # 2。分支 branch attention
                 a_b = self.branch_att(att)
                 # 将out与分支注意力结果，按顺序分别相乘
