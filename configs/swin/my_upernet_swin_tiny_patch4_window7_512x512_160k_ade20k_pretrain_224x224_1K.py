@@ -36,30 +36,30 @@ model = dict(
                      #     dict(type='PPM', layer_idx=2), dict(type='PPM', layer_idx=3)]
                      do_ba=False,
                      msc_module_cfg=[
-                        dict(type='UFE', layer_idx=0, ufe_cfg=dict(
-                            num_stages=4,
-                            strides=(1, 1, 1, 1),
-                            enc_num_convs=(1, 1, 1, 1),
-                            dec_num_convs=(1, 1, 1),
-                            downsamples=(True, True, True),
-                            enc_dilations=(1, 1, 1, 1),
-                            dec_dilations=(1, 1, 1),)),
-                        dict(type='UFE', layer_idx=1, ufe_cfg=dict(
-                            num_stages=3,
-                            strides=(1, 1, 1),
-                            enc_num_convs=(1, 1, 1),
-                            dec_num_convs=(1, 1),
-                            downsamples=(True, True),
-                            enc_dilations=(1, 1, 1),
-                            dec_dilations=(1, 1),)),
-                        dict(type='UFE', layer_idx=2, ufe_cfg=dict(
-                            num_stages=2,
-                            strides=(1, 1),
-                            enc_num_convs=(1, 1),
-                            dec_num_convs=([1]),
-                            downsamples=([True]),
-                            enc_dilations=(1, 1),
-                            dec_dilations=([1]),)),
+                        # dict(type='UFE', layer_idx=0, ufe_cfg=dict(
+                        #     num_stages=4,
+                        #     strides=(1, 1, 1, 1),
+                        #     enc_num_convs=(1, 1, 1, 1),
+                        #     dec_num_convs=(1, 1, 1),
+                        #     downsamples=(True, True, True),
+                        #     enc_dilations=(1, 1, 1, 1),
+                        #     dec_dilations=(1, 1, 1),)),
+                        # dict(type='UFE', layer_idx=1, ufe_cfg=dict(
+                        #     num_stages=3,
+                        #     strides=(1, 1, 1),
+                        #     enc_num_convs=(1, 1, 1),
+                        #     dec_num_convs=(1, 1),
+                        #     downsamples=(True, True),
+                        #     enc_dilations=(1, 1, 1),
+                        #     dec_dilations=(1, 1),)),
+                        # dict(type='UFE', layer_idx=2, ufe_cfg=dict(
+                        #     num_stages=2,
+                        #     strides=(1, 1),
+                        #     enc_num_convs=(1, 1),
+                        #     dec_num_convs=([1]),
+                        #     downsamples=([True]),
+                        #     enc_dilations=(1, 1),
+                        #     dec_dilations=([1]),)),
                         dict(type='PPM', layer_idx=3)
                      ]
                      # msc_module_cfg=[

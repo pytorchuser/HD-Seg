@@ -279,11 +279,11 @@ class FamLayer(BaseModule):
         w_product = self.w_conv(w_product)
 
         # spatial attention for resnet
-        res_out = self.channel_att(res_out)
+        # res_out = self.channel_att(res_out)
         g_out = self.strip_pool(res_out)
 
         # channel attention for swin
-        swin_out = self.channel_att(swin_out)
+        # swin_out = self.channel_att(swin_out)
         t_out = self.strip_pool(swin_out)
 
         # residual

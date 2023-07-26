@@ -130,12 +130,12 @@ class UPerCustomHead(BaseDecodeHead):
 
         # TODO 此处添加EA操作，对原始的inputs进行
         if self.do_ba:
-            ea_inputs = []
-            for idx in self.ea_idx:
-                ea = self.ea_module[idx](inputs[idx], inputs[idx + 1])
-                ea_inputs.append(ea)
-            for idx in self.ea_idx:
-                inputs[idx] = ea_inputs[idx]
+            ba_inputs = []
+            for idx in self.ba_idx:
+                ba = self.ba_module[idx](inputs[idx], inputs[idx + 1])
+                ba_inputs.append(ba)
+            for idx in self.ba_idx:
+                inputs[idx] = ba_inputs[idx]
 
         # build laterals 对inputs进行卷积，让norm特征图有一个一致的维度C
         laterals = [
