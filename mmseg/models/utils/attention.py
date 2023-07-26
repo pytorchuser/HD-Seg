@@ -44,10 +44,10 @@ class ChannelAtt(BaseModule):
         # soft_pool_mlp = self.mlp(soft_pool)
         sum_pool = avg_pool_mlp + max_pool_mlp
 
-        channel_att_sum = self.incr(sum_pool)
-        att = torch.sigmoid(channel_att_sum).unsqueeze(2).unsqueeze(3).expand_as(avg_pool)
+        channel_att_sum = self.incr(sum_pool).unsqueeze(2).unsqueeze(3).expand_as(avg_pool)
+        att = torch.sigmoid(channel_att_sum)
         att_out = att * x
-        return att, att_out
+        return channel_att_sum, att_out
 
 
 class ESChannelAtt(BaseModule):
@@ -289,12 +289,12 @@ class FamLayer(BaseModule):
         w_product = self.w_conv(w_product)
 
         # spatial attention for resnet
-        # res_out = self.channel_att0(res_out)
-        # g_out = self.strip_pool0(res_out)
+        # _, res_out = self.channel_att0(res_out)
+        # _, g_out = self.strip_pool0(res_out)
 
         # channel attention for swin
-        # swin_out = self.channel_att1(swin_out)
-        # t_out = self.strip_pool1(swin_out)
+        # _, swin_out = self.channel_att1(swin_out)
+        # _, t_out = self.strip_pool1(swin_out)
 
         # residual
         out = self.residual(torch.cat([g_out, t_out, w_product], dim=1))
