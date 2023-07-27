@@ -161,7 +161,7 @@ class BA(BaseModule):
                 self.out_channels,
                 kernel_size=1,
                 bias=False),
-            build_norm_layer(norm_cfg, in_channels)[1],
+            build_norm_layer(norm_cfg, self.out_channels)[1],
             build_activation_layer(act_cfg)
         )
 

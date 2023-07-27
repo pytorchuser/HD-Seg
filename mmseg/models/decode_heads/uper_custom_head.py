@@ -126,11 +126,6 @@ class UPerCustomHead(BaseDecodeHead):
             output = self.bottleneck_modules[module_idx](psp_outs[-1])
             # att操作
             # output = self.att_layer(output)
-            # 和BA结果concat
-            if self.do_ba and idx in [0, 1]:
-                output = torch.cat([output, self.ba_inputs[idx]], dim=1)
-                # 结果变成512
-                output = self.channel_conv(output)
             return output
 
     def _forward_feature(self, inputs):
@@ -177,6 +172,9 @@ class UPerCustomHead(BaseDecodeHead):
         # 把深层特征进行psp forward后(16, 16)再进行上采样，与前面stage输出的浅层特征进行残差连接（加和）（32，32）
         for i in range(used_backbone_levels - 1, 0, -1):
             prev_shape = laterals[i - 1].shape[2:]  # 浅层stage输出的尺寸:[32,32]
+            # 将BA的结果与对应层UFE结果相加
+            if i in [0, 1]:
+                laterals[i] = laterals[i] + self.ba_inputs[i]
             # laterals[i - 1]即前面stage输出的浅层特征， resize对特征进行上采样
             laterals[i - 1] = laterals[i - 1] + resize(
                 laterals[i],
