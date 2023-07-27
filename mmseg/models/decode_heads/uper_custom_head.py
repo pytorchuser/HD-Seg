@@ -31,24 +31,13 @@ class UPerCustomHead(BaseDecodeHead):
         if self.do_ba:
             self.ba_idx = [0, 1]
             self.ba_module = nn.ModuleList()
-            # 把BA和UFE结果channel改为512
-            self.channel_conv = nn.ModuleList()
             for i in self.ba_idx:
                 ba = BA(
                     self.in_channels[i],
                     self.channels
                 )
                 self.ba_module.append(ba)
-
-                conv = ConvModule(
-                    self.channels * 2,
-                    self.channels,
-                    1,
-                    conv_cfg=self.conv_cfg,
-                    norm_cfg=self.norm_cfg,
-                    act_cfg=self.act_cfg)
-                self.channel_conv.append(conv)
-            self.ba_inputs = []
+            self.ba_outputs = []
 
         # PSP Module
         # 读取配置文件的参数，初始化PPM或其他(UFE)处理模型列表
@@ -144,9 +133,10 @@ class UPerCustomHead(BaseDecodeHead):
 
         # BA操作，对原始的inputs进行
         if self.do_ba:
+            ba_inputs = inputs
             for idx in self.ba_idx:
-                ba = self.ba_module[idx](inputs[idx], inputs[idx + 1])
-                self.ba_inputs.append(ba)
+                ba = self.ba_module[idx](ba_inputs[idx], ba_inputs[idx + 1])
+                self.ba_outputs.append(ba)
             # 废弃：BA和UFE串行
             # for idx in self.ba_idx:
             #     inputs[idx] = ba_inputs[idx]
@@ -168,13 +158,15 @@ class UPerCustomHead(BaseDecodeHead):
         # build top-down path
         used_backbone_levels = len(laterals)
 
+        # 将BA的结果与对应层结果相加
+        for i in range(used_backbone_levels):
+            if self.do_ba and i in [0, 1]:
+                laterals[i] = laterals[i] + self.ba_inputs[i]
+
         # ？ FPN功能
         # 把深层特征进行psp forward后(16, 16)再进行上采样，与前面stage输出的浅层特征进行残差连接（加和）（32，32）
         for i in range(used_backbone_levels - 1, 0, -1):
             prev_shape = laterals[i - 1].shape[2:]  # 浅层stage输出的尺寸:[32,32]
-            # 将BA的结果与对应层UFE结果相加
-            if i in [0, 1]:
-                laterals[i] = laterals[i] + self.ba_inputs[i]
             # laterals[i - 1]即前面stage输出的浅层特征， resize对特征进行上采样
             laterals[i - 1] = laterals[i - 1] + resize(
                 laterals[i],
