@@ -124,7 +124,7 @@ class StripPooling(BaseModule):
         self.re_conv = nn.Sequential(
             build_conv_layer(
                 conv_cfg,
-                inter_channels * 2,
+                inter_channels,
                 in_channels,
                 kernel_size=1,
                 bias=False),
@@ -158,6 +158,7 @@ class StripPooling(BaseModule):
         # x2 = self.conv(F.relu_(x2_h + x2_w))
         # 将x1 x2拼在一起并还原管道数
         # out = self.re_conv(torch.cat([x1, x2], dim=1))
+        out = self.re_conv(out)
         # out与input原值直接相加
         # out = F.relu_(x + out)
         return x1_out, out

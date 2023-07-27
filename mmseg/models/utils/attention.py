@@ -47,7 +47,7 @@ class ChannelAtt(BaseModule):
         channel_att_sum = self.incr(sum_pool).unsqueeze(2).unsqueeze(3).expand_as(avg_pool)
         att = torch.sigmoid(channel_att_sum)
         att_out = att * x
-        return channel_att_sum, att_out
+        return att, att_out
 
 
 class ESChannelAtt(BaseModule):
@@ -285,7 +285,7 @@ class FamLayer(BaseModule):
         # bilinear pooling
         # w_product = swin_out * res_out
         # (1,1,c) * (h,w,1)
-        w_product = swin_att * res_strip
+        w_product = swin_att * res_out
         w_product = self.w_conv(w_product)
 
         # spatial attention for resnet
