@@ -126,6 +126,7 @@ class STN(BaseModule):
 class BA(BaseModule):
     def __init__(self,
                  in_channels,
+                 out_channels,
                  act_cfg=None,
                  norm_cfg=None,
                  conv_cfg=None):
@@ -136,6 +137,7 @@ class BA(BaseModule):
             act_cfg = dict(type='ReLU')
         if conv_cfg is None:
             conv_cfg = dict(type='Conv2d')
+        self.out_channels = out_channels
         self.up_sample = UpBlock(in_channels * 2)
         self.c_2_conv = build_conv_layer(
             cfg=conv_cfg,
@@ -156,7 +158,7 @@ class BA(BaseModule):
             build_conv_layer(
                 conv_cfg,
                 in_channels * 2,
-                in_channels,
+                self.out_channels,
                 kernel_size=1,
                 bias=False),
             build_norm_layer(norm_cfg, in_channels)[1],

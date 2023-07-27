@@ -31,11 +31,25 @@ class UPerCustomHead(BaseDecodeHead):
         if self.do_ba:
             self.ba_idx = [0, 1]
             self.ba_module = nn.ModuleList()
+            # 把BA和UFE结果channel改为512
+            self.channel_conv = nn.ModuleList()
             for i in self.ba_idx:
                 ba = BA(
                     self.in_channels[i],
+                    self.channels
                 )
                 self.ba_module.append(ba)
+
+                conv = ConvModule(
+                    self.channels * 2,
+                    self.channels,
+                    1,
+                    conv_cfg=self.conv_cfg,
+                    norm_cfg=self.norm_cfg,
+                    act_cfg=self.act_cfg)
+                self.channel_conv.append(conv)
+            self.ba_inputs = []
+
         # PSP Module
         # 读取配置文件的参数，初始化PPM或其他(UFE)处理模型列表
         # 初始化对应的bottleneck卷积模型列表
@@ -112,6 +126,11 @@ class UPerCustomHead(BaseDecodeHead):
             output = self.bottleneck_modules[module_idx](psp_outs[-1])
             # att操作
             # output = self.att_layer(output)
+            # 和BA结果concat
+            if self.do_ba and idx in [0, 1]:
+                output = torch.cat([output, self.ba_inputs[idx]], dim=1)
+                # 结果变成512
+                output = self.channel_conv(output)
             return output
 
     def _forward_feature(self, inputs):
@@ -128,14 +147,14 @@ class UPerCustomHead(BaseDecodeHead):
         # inputs 是一个list ， 即前面4个stage得到的结果, 每个特征channels不同， 即特征维度不同
         inputs = self._transform_inputs(inputs)
 
-        # TODO 此处添加EA操作，对原始的inputs进行
+        # BA操作，对原始的inputs进行
         if self.do_ba:
-            ba_inputs = []
             for idx in self.ba_idx:
                 ba = self.ba_module[idx](inputs[idx], inputs[idx + 1])
-                ba_inputs.append(ba)
-            for idx in self.ba_idx:
-                inputs[idx] = ba_inputs[idx]
+                self.ba_inputs.append(ba)
+            # 废弃：BA和UFE串行
+            # for idx in self.ba_idx:
+            #     inputs[idx] = ba_inputs[idx]
 
         # build laterals 对inputs进行卷积，让norm特征图有一个一致的维度C
         laterals = [
