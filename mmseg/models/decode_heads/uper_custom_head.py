@@ -98,7 +98,18 @@ class UPerCustomHead(BaseDecodeHead):
             norm_cfg=self.norm_cfg,
             act_cfg=self.act_cfg)
 
-    # inputs: transformer 每个stage输出的特征图列表
+        self.concat_conv = nn.ModuleList()
+        for i in range(3):
+            concat_conv = ConvModule(
+                self.channels * 2,
+                self.channels,
+                1,
+                conv_cfg=self.conv_cfg,
+                norm_cfg=self.norm_cfg,
+                act_cfg=self.act_cfg)
+            self.concat_conv.append(concat_conv)
+
+        # inputs: transformer 每个stage输出的特征图列表
     # idx： 特殊处理的层级layer_idx inputs[idx]
     # module_idx： idx对应卷积module的下标 fe_modules[module_idx]
     # 用idx和module_idx确保卷积层in_channel一一对应
@@ -183,12 +194,21 @@ class UPerCustomHead(BaseDecodeHead):
         # 把深层特征进行psp forward后(16, 16)再进行上采样，与前面stage输出的浅层特征进行残差连接（加和）（32，32）
         for i in range(used_backbone_levels - 1, 0, -1):
             prev_shape = laterals[i - 1].shape[2:]  # 浅层stage输出的尺寸:[32,32]
+            # 残差链接
             # laterals[i - 1]即前面stage输出的浅层特征， resize对特征进行上采样
-            laterals[i - 1] = laterals[i - 1] + resize(
+            # laterals[i - 1] = laterals[i - 1] + resize(
+            #     laterals[i],
+            #     size=prev_shape,
+            #     mode='bilinear',
+            #     align_corners=self.align_corners)
+            # concat
+            lateral_i = resize(
                 laterals[i],
                 size=prev_shape,
                 mode='bilinear',
                 align_corners=self.align_corners)
+            lateral_i1 = torch.cat([laterals[i - 1], lateral_i], dim=1)
+            laterals[i - 1] = self.concat_conv[i](lateral_i1)
         # build outputs
         # 对不需要特殊模型处理的层数残差连接后的特征图再各自走了一个卷积
         # 对不需要特殊处理的特征图进行3*3卷积并放入fpn_outs中
