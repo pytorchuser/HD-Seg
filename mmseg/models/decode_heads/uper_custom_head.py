@@ -37,7 +37,6 @@ class UPerCustomHead(BaseDecodeHead):
                     self.channels
                 )
                 self.ba_module.append(ba)
-            self.ba_outputs = []
 
         # PSP Module
         # 读取配置文件的参数，初始化PPM或其他(UFE)处理模型列表
@@ -115,6 +114,9 @@ class UPerCustomHead(BaseDecodeHead):
             output = self.bottleneck_modules[module_idx](psp_outs[-1])
             # att操作
             # output = self.att_layer(output)
+            if self.do_ba and idx in [0, 1]:
+                ba_out = self.ba_module[idx](inputs[idx], inputs[idx + 1])
+                output = output + ba_out
             return output
 
     def _forward_feature(self, inputs):
@@ -132,14 +134,14 @@ class UPerCustomHead(BaseDecodeHead):
         inputs = self._transform_inputs(inputs)
 
         # BA操作，对原始的inputs进行
-        if self.do_ba:
-            ba_inputs = inputs
-            for idx in self.ba_idx:
-                ba = self.ba_module[idx](ba_inputs[idx], ba_inputs[idx + 1])
-                self.ba_outputs.append(ba)
-            # 废弃：BA和UFE串行
-            # for idx in self.ba_idx:
-            #     inputs[idx] = ba_inputs[idx]
+        # if self.do_ba:
+        #     ba_inputs = inputs
+        #     for idx in self.ba_idx:
+        #         ba = self.ba_module[idx](ba_inputs[idx], ba_inputs[idx + 1])
+        #         self.ba_outputs.append(ba)
+        # 废弃：BA和UFE串行
+        # for idx in self.ba_idx:
+        #     inputs[idx] = ba_inputs[idx]
 
         # build laterals 对inputs进行卷积，让norm特征图有一个一致的维度C
         laterals = [
@@ -159,9 +161,9 @@ class UPerCustomHead(BaseDecodeHead):
         used_backbone_levels = len(laterals)
 
         # 将BA的结果与对应层结果相加
-        for i in range(used_backbone_levels):
-            if self.do_ba and i in [0, 1]:
-                laterals[i] = laterals[i] + self.ba_inputs[i]
+        # for i in range(used_backbone_levels):
+        #     if self.do_ba and i in [0, 1]:
+        #         laterals[i] = laterals[i] + self.ba_inputs[i]
 
         # ？ FPN功能
         # 把深层特征进行psp forward后(16, 16)再进行上采样，与前面stage输出的浅层特征进行残差连接（加和）（32，32）
