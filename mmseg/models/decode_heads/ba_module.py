@@ -173,11 +173,11 @@ class BA(BaseModule):
         # x_low用双线性上采样至跟x尺寸一致
         x_low = self.up_sample(x_low)
         # concat
-        out = torch.cat([x, x_low], dim=1)
+        # out = torch.cat([x, x_low], dim=1)
         # 用3*3卷积将管道改为2
-        out = self.c_2_conv(out)
+        # out = self.c_2_conv(out)
         # 过STN
-        out = self.stn(out)
+        out = self.stn(x_low)
         # 将管道数改为原图大小
         # out = self.re_conv(out)
         # 用原图-STN输出得到最后的输出
