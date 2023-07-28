@@ -17,6 +17,7 @@ from mmengine.runner import CheckpointLoader
 from mmengine.utils import to_2tuple
 
 from mmseg.registry import MODELS
+from .. import STN
 from ..backbones.resnet_plus import ResNetPlus
 from ..utils.attention import AttLayer, SKLayer, FamLayer
 from ..utils.embed import PatchEmbed, PatchMerging
@@ -759,6 +760,7 @@ class SIMSwinTransformerPlus(BaseModule):
         num_layers = len(depths)
         self.out_indices = out_indices
         self.use_abs_pos_embed = use_abs_pos_embed
+        self.stn = STN(in_channels)
 
         assert strides[0] == patch_size, 'Use non-overlapping patch embed.'
 
@@ -952,8 +954,9 @@ class SIMSwinTransformerPlus(BaseModule):
             self.load_state_dict(state_dict, strict=False)
 
     def forward(self, x):
+        org_x = x = self.stn(x)
         # 先保留一下最初的input
-        org_x = x
+        # org_x = x
 
         # 走swin
         x, hw_shape = self.patch_embed(x)
