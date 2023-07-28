@@ -31,12 +31,22 @@ class UPerCustomHead(BaseDecodeHead):
         if self.do_ba:
             self.ba_idx = [0, 1]
             self.ba_module = nn.ModuleList()
+            # concat后修改channel
+            self.cat_conv = nn.ModuleList()
             for i in self.ba_idx:
                 ba = BA(
                     self.in_channels[i],
                     self.channels
                 )
                 self.ba_module.append(ba)
+                conv = ConvModule(
+                    self.channels * 2,
+                    self.channels,
+                    1,
+                    conv_cfg=self.conv_cfg,
+                    norm_cfg=self.norm_cfg,
+                    act_cfg=self.act_cfg)
+                self.cat_conv.append(conv)
 
         # PSP Module
         # 读取配置文件的参数，初始化PPM或其他(UFE)处理模型列表
@@ -116,7 +126,11 @@ class UPerCustomHead(BaseDecodeHead):
             # output = self.att_layer(output)
             if self.do_ba and idx in [0, 1]:
                 ba_out = self.ba_module[idx](inputs[idx], inputs[idx + 1])
-                output = output + ba_out
+                # 相加
+                # output = output + ba_out
+                # concat
+                cat_out = torch.cat([ba_out, output], dim=1)
+                output = self.cat_conv[idx](cat_out)
             return output
 
     def _forward_feature(self, inputs):
