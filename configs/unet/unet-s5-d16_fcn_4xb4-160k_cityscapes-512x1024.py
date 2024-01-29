@@ -1,9 +1,9 @@
 _base_ = [
-    '../_base_/models/fcn_unet_s5-d16.py', '../_base_/datasets/oct_duke2015.py',
+    '../_base_/models/fcn_unet_s5-d16.py', '../_base_/datasets/oct_hcms2018.py',
     '../_base_/default_runtime.py', '../_base_/schedules/schedule_epoch.py'
 ]
 load_from = '../pth/fcn_unet_s5-d16_4x4_512x1024_160k_cityscapes_20211210_145204-6860854e.pth'  # noqa
-NUM_CLASSES = 10
+NUM_CLASSES = 9
 
 data_preprocessor = dict(size=(512, 512))
 
@@ -67,10 +67,10 @@ param_scheduler = [
         gamma=0.8,
         by_epoch=True)]
 train_dataloader = dict(
-    batch_size=4
+    batch_size=8
 )
 val_dataloader = dict(
-    batch_size=1,
+    batch_size=8,
     num_workers=1,
     sampler=dict(
         type='DefaultSampler',
@@ -78,7 +78,7 @@ val_dataloader = dict(
         shuffle=True)
 )
 test_dataloader = dict(
-    batch_size=1,
+    batch_size=8,
     num_workers=1,
     sampler=dict(
         type='DefaultSampler',

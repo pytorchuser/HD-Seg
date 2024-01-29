@@ -25,8 +25,8 @@ model = dict(
     backbone=dict(
         type='ResNetV1c',
         depth=50,
-        stem_channels=32,
-        base_channels=32,
+        stem_channels=64,
+        base_channels=64,
         num_stages=4,
         out_indices=(0, 1, 2, 3),
         dilations=(1, 1, 1, 1),
@@ -65,31 +65,31 @@ model = dict(
     # DeepLab used this class weight for cityscapes
     # class_weight=[0.8373, 0.9180, 0.8660, 1.0345, 1.0166, 0.9969, 0.9754, 1.0489, 0.8786, 1.0023, 0.9539]
     # 辅助头(auxiliary head)的种类。可用选项请参考 mmseg/models/decode_heads
-    auxiliary_head=dict(
-        type='FCNHead',
-        # 辅助头的输入通道数
-        in_channels=384,
-        # 被选择的特征图(feature map)的索引
-        in_index=2,
-        # 辅助头中间态(intermediate)的通道数
-        channels=256,
-        # FCNHead 里卷积(convs)的数目，辅助头中通常为1
-        num_convs=1,
-        # 在分类层(classification layer)之前是否连接(concat)输入和卷积的输出
-        concat_input=False,
-        # 进入最后分类层(classification layer)之前的 dropout 比例
-        dropout_ratio=0.1,
-        # 分割前景的种类数目。
-        num_classes=11,
-        # 归一化层的配置项
-        norm_cfg=norm_cfg,
-        # 解码过程中调整大小(resize)的 align_corners 参数
-        align_corners=False,
-        # 辅助头(auxiliary head)里的损失函数的配置项
-        # loss_decode=dict(
-        #     type='CrossEntropyLoss', use_sigmoid=False, loss_weight=0.4)),
-        loss_decode=[dict(type='CrossEntropyLoss', loss_name='loss_ce', loss_weight=0.4),
-                     dict(type='DiceLoss', loss_name='loss_dice', loss_weight=0.4)]),
+    # auxiliary_head=dict(
+    #     type='FCNHead',
+    #     # 辅助头的输入通道数
+    #     in_channels=384,
+    #     # 被选择的特征图(feature map)的索引
+    #     in_index=2,
+    #     # 辅助头中间态(intermediate)的通道数
+    #     channels=256,
+    #     # FCNHead 里卷积(convs)的数目，辅助头中通常为1
+    #     num_convs=1,
+    #     # 在分类层(classification layer)之前是否连接(concat)输入和卷积的输出
+    #     concat_input=False,
+    #     # 进入最后分类层(classification layer)之前的 dropout 比例
+    #     dropout_ratio=0.1,
+    #     # 分割前景的种类数目。
+    #     num_classes=11,
+    #     # 归一化层的配置项
+    #     norm_cfg=norm_cfg,
+    #     # 解码过程中调整大小(resize)的 align_corners 参数
+    #     align_corners=False,
+    #     # 辅助头(auxiliary head)里的损失函数的配置项
+    #     # loss_decode=dict(
+    #     #     type='CrossEntropyLoss', use_sigmoid=False, loss_weight=0.4)),
+    #     loss_decode=[dict(type='CrossEntropyLoss', loss_name='loss_ce', loss_weight=0.4),
+    #                  dict(type='DiceLoss', loss_name='loss_dice', loss_weight=0.4)]),
     # model training and testing settings
     # train_cfg 当前仅是一个占位符
     train_cfg=dict(),

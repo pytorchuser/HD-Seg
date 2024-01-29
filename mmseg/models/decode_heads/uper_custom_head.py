@@ -208,7 +208,7 @@ class UPerCustomHead(BaseDecodeHead):
                 mode='bilinear',
                 align_corners=self.align_corners)
             lateral_i1 = torch.cat([laterals[i - 1], lateral_i], dim=1)
-            laterals[i - 1] = self.concat_conv[i](lateral_i1)
+            laterals[i - 1] = self.concat_conv[i - 1](lateral_i1)
         # build outputs
         # 对不需要特殊模型处理的层数残差连接后的特征图再各自走了一个卷积
         # 对不需要特殊处理的特征图进行3*3卷积并放入fpn_outs中

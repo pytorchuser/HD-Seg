@@ -296,6 +296,8 @@ class FamLayer(BaseModule):
         # _, swin_out = self.channel_att1(swin_out)
         # _, t_out = self.strip_pool1(swin_out)
 
+        out = swin_out + res_out
         # residual
+        # out = self.residual(torch.cat([swin_out, res_out], dim=1))
         out = self.residual(torch.cat([g_out, t_out, w_product], dim=1))
         return out

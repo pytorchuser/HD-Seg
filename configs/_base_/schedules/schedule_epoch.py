@@ -34,7 +34,7 @@ param_scheduler = [
 ]
 # training schedule by epoch
 train_cfg = dict(
-    type='EpochBasedTrainLoop', max_epochs=100, val_begin=10, val_interval=1)
+    type='EpochBasedTrainLoop', max_epochs=50, val_begin=10, val_interval=1)
 val_cfg = dict(type='ValLoop')
 test_cfg = dict(type='TestLoop')
 # 默认钩子(hook)配置
@@ -57,4 +57,4 @@ default_hooks = dict(
     # 用于分布式训练的数据加载采样器
     sampler_seed=dict(type='DistSamplerSeedHook'),
     # 验证结果可视化
-    visualization=dict(type='SegVisualizationHook'))
+    visualization=dict(type='SegVisualizationHook', draw=False, interval=1))

@@ -3,7 +3,7 @@ _base_ = [
     '../_base_/default_runtime.py', '../_base_/schedules/schedule_epoch.py'
 ]
 # load_from = '../pth/upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210531_112542-e380ad3e.pth'  # noqa
-# load_from = '../pth/upernet_r50_512x512_160k_ade20k_20200615_184328-8534de8d.pth'  # noqa
+load_from = '../pth/upernet_r50_512x512_160k_ade20k_20200615_184328-8534de8d.pth'  # noqa
 NUM_CLASSES = 10
 
 data_preprocessor = dict(size=(512, 512))
@@ -12,8 +12,8 @@ model = dict(
     data_preprocessor=data_preprocessor,
 
     decode_head=dict(
-                     in_channels=[128, 256, 512, 1024],
-                     # in_channels=[256, 512, 1024, 2048],
+                     # in_channels=[128, 256, 512, 1024],
+                     in_channels=[256, 512, 1024, 2048],
                      num_classes=NUM_CLASSES, dropout_ratio=0.1,
                      loss_decode=[dict(type='CrossEntropyLoss', loss_name='loss_ce', loss_weight=1.0),
                      dict(type='DiceLoss', loss_name='loss_dice', loss_weight=1.0)],
@@ -55,7 +55,7 @@ model = dict(
                      #     dict(type='PPM', layer_idx=1), dict(type='PPM', layer_idx=2),
                      #     dict(type='PPM', layer_idx=3)]
                      ),
-    auxiliary_head=dict(in_channels=512, dropout_ratio=0.1, num_classes=NUM_CLASSES)
+    # auxiliary_head=dict(in_channels=512, dropout_ratio=0.1, num_classes=NUM_CLASSES)
 )
 
 # AdamW optimizer, no weight decay for position embedding & layer norm in backbone

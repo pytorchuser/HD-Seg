@@ -84,6 +84,7 @@ class IoUMetric(BaseMetric):
                 self.results.append(
                     self.intersect_and_union(pred_label, label, num_classes,
                                              self.ignore_index))
+                # Todo 添加一个获取预测标签和真实标签边界的方法
             # format_result
             if self.output_dir is not None:
                 basename = osp.splitext(osp.basename(
@@ -128,7 +129,7 @@ class IoUMetric(BaseMetric):
         ret_metrics = self.total_area_to_metrics(
             total_area_intersect, total_area_union, total_area_pred_label,
             total_area_label, self.metrics, self.nan_to_num, self.beta)
-
+        # Todo results[4]存储边界值，写一个方法实现MAD计算：
         class_names = self.dataset_meta['classes']
 
         # summary table
@@ -157,7 +158,7 @@ class IoUMetric(BaseMetric):
 
         print_log('per class results:', logger)
         print_log('\n' + class_table_data.get_string(), logger=logger)
-
+        #Todo 找到输出计算结果的地方，将MAD结果输出
         return metrics
 
     @staticmethod

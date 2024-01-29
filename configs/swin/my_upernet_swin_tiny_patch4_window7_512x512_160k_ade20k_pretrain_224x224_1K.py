@@ -3,7 +3,7 @@ _base_ = [
     '../_base_/default_runtime.py', '../_base_/schedules/schedule_epoch.py'
 ]
 # load_from = '../pth/upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210531_112542-e380ad3e.pth'  # noqa
-load_from = '../pth/swin&res_best_mDice_epoch_68_joint.pth'  # noqa
+# load_from = '../pth/swin&res_best_mDice_epoch_68_joint.pth'  # noqa
 NUM_CLASSES = 10
 
 data_preprocessor = dict(size=(512, 512))
@@ -28,8 +28,12 @@ model = dict(
                      in_channels=[96, 192, 384, 768],
                      # in_channels=[128, 256, 512, 1024],
                      num_classes=NUM_CLASSES, dropout_ratio=0.1,
-                     loss_decode=[dict(type='CrossEntropyLoss', loss_name='loss_ce', loss_weight=1.0),
-                     dict(type='DiceLoss', loss_name='loss_dice', loss_weight=1.0)],
+                     loss_decode=[dict(type='CrossEntropyLoss', loss_name='loss_ce', loss_weight=1.0,
+                                       class_weight=[0.3, 1, 1, 1, 1, 1, 1, 1,  1]
+                                       ),
+                                  dict(type='DiceLoss', loss_name='loss_dice', loss_weight=1.0,
+                                       class_weight=[0.3, 1, 1, 1, 1, 1, 1, 1, 1]
+                                       )],
                      # TODO 此处添加配置信息msc_module_cfg
                      # msc_module_cfg=[
                      #     dict(type='PPM', layer_idx=0), dict(type='PPM', layer_idx=1),
@@ -68,7 +72,7 @@ model = dict(
                      #     dict(type='PPM', layer_idx=1), dict(type='PPM', layer_idx=2),
                      #     dict(type='PPM', layer_idx=3)]
                      ),
-    auxiliary_head=dict(in_channels=384, dropout_ratio=0.1, num_classes=NUM_CLASSES)
+    # auxiliary_head=dict(in_channels=384, dropout_ratio=0.1, num_classes=NUM_CLASSES)
 )
 
 # AdamW optimizer, no weight decay for position embedding & layer norm in backbone

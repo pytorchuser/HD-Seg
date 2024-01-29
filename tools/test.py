@@ -7,12 +7,12 @@ from mmengine.config import Config, DictAction
 from mmengine.runner import Runner
 
 
-FILENAME = 'oct_T_2_3lr_h_octduke2015_800_epoch'
+FILENAME = 'T_88_3lr_check_cbafecu_srpth_plusnew1famsar_ps44_loss1&ce1_LS10_duke2015crop512_epoch100_1x'
 
 CONFIG = '../configs/swin/my_upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K.py'
-CHECKPOINT = '../tools/output/train/' + FILENAME + '/latest.pth'
-WORK_DIR = 'output/train/' + FILENAME
-OUT = 'output/test/' + FILENAME + '/results.pkl'
+CHECKPOINT = '../tools/output/train/Ablation_experiment/' + FILENAME + '/best_mDice_epoch_36.pth'
+WORK_DIR = 'output/test/' + FILENAME
+OUT = 'output/test/' + FILENAME + '/result'
 SHOW_DIR = 'output/test/' + FILENAME
 
 
