@@ -11,6 +11,7 @@ from mmengine.logging import MMLogger, print_log
 from mmengine.utils import mkdir_or_exist
 from PIL import Image
 from prettytable import PrettyTable
+from torch import Tensor
 
 from mmseg.registry import METRICS
 
@@ -84,10 +85,10 @@ class IoUMetric(BaseMetric):
                 self.results.append(
                     self.intersect_and_union(pred_label, label, num_classes,
                                              self.ignore_index))
-                # Todo 添加一个获取预测标签和真实标签边界的方法
-                # self.results.append(
-                #     self.pred_gt_boundary(pred_label, label, num_classes, self.ignore_index)
-                # )
+                # 获取预测标签和真实标签边界
+                self.results.append(
+                    self.pred_gt_boundary(pred_label, label, num_classes, self.ignore_index)
+                )
             # format_result
             if self.output_dir is not None:
                 basename = osp.splitext(osp.basename(
@@ -123,7 +124,8 @@ class IoUMetric(BaseMetric):
         # [(A_1, B_1, C_1, D_1), ...,  (A_n, B_n, C_n, D_n)] to
         # ([A_1, ..., A_n], ..., [D_1, ..., D_n])
         results = tuple(zip(*results))
-        assert len(results) == 4
+        # 添加mad之后，长度从4->6
+        assert len(results) == 6
 
         total_area_intersect = sum(results[0])
         total_area_union = sum(results[1])
@@ -160,10 +162,9 @@ class IoUMetric(BaseMetric):
 
         print_log('per class results:', logger)
         print_log('\n' + class_table_data.get_string(), logger=logger)
-        # Todo results[4]存储边界值，写一个方法实现MAD计算：
-        # mad_metrics = self.mean_absolute_difference(results[4], results[5])
-        # Todo 找到输出计算结果的地方，将MAD结果输出
-        # 将mad_metrics取平均值，将所有结果放入metrics中，名字叫mad。
+        # results[4]和[5]存储边界值，写一个方法实现MAD计算：
+        mad_metrics = self.mean_absolute_difference(results[4], results[5])
+        metrics['mad'] = mad_metrics
         return metrics
 
     @staticmethod
@@ -293,11 +294,33 @@ class IoUMetric(BaseMetric):
 
     def pred_gt_boundary(self, pred_label, label, num_classes, ignore_index):
         # 循环遍历pred_label和gt_label，找出每一列label数值发生变化的横坐标。
-        # 存储在对应num_classes的数列中，如果是ignore_index就不存储。
+        pred_boundary = self.get_boundary(pred_label, num_classes, ignore_index)
+        gt_boundary = self.get_boundary(label, num_classes, ignore_index)
         # 分别返回pred和gt的列表
-        return 0
+        return pred_boundary, gt_boundary
 
-    def mean_absolute_difference(self, pred_boundary, gt_boundary):
-        # 每组边界的512个差值取绝对值，再取平均值
+    @staticmethod
+    def get_boundary(label, num_classes, ignore_index):
+        target = 0
+        # 创建形状为（9，512）的ndarray
+        res = np.zeros((num_classes, label.size()[1]))
+        # 默认tensor与原图方向一致，遍历tensor每一列
+        for i in range(label.size()[1]):
+            for j in range(label.size()[0]):
+                if label[j][i] != target:
+                    target = label[j][i]
+                    # 存储在对应num_classes的数列中，如果是ignore_index就不存储。
+                    if target != ignore_index:
+                        res[target - 1][i] = j
+        boundary = torch.tensor(res)
+        return boundary
+
+    @staticmethod
+    def mean_absolute_difference(pred_boundary: Tensor, gt_boundary: Tensor):
+        # 每组边界的512个差值,取绝对值再平均值
+        mad_sub = torch.sub(pred_boundary, gt_boundary)
+        mad_abs = torch.mean(torch.abs(mad_sub), dim=1)
+        mad_mean = torch.mean(mad_abs)
+        mad = torch.cat((mad_abs, mad_mean))
         # 返回num_classes-1/num_classes个计算结果
-        return 0
+        return mad
