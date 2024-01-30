@@ -85,6 +85,9 @@ class IoUMetric(BaseMetric):
                     self.intersect_and_union(pred_label, label, num_classes,
                                              self.ignore_index))
                 # Todo 添加一个获取预测标签和真实标签边界的方法
+                # self.results.append(
+                #     self.pred_gt_boundary(pred_label, label, num_classes, self.ignore_index)
+                # )
             # format_result
             if self.output_dir is not None:
                 basename = osp.splitext(osp.basename(
@@ -129,7 +132,6 @@ class IoUMetric(BaseMetric):
         ret_metrics = self.total_area_to_metrics(
             total_area_intersect, total_area_union, total_area_pred_label,
             total_area_label, self.metrics, self.nan_to_num, self.beta)
-        # Todo results[4]存储边界值，写一个方法实现MAD计算：
         class_names = self.dataset_meta['classes']
 
         # summary table
@@ -158,7 +160,10 @@ class IoUMetric(BaseMetric):
 
         print_log('per class results:', logger)
         print_log('\n' + class_table_data.get_string(), logger=logger)
-        #Todo 找到输出计算结果的地方，将MAD结果输出
+        # Todo results[4]存储边界值，写一个方法实现MAD计算：
+        # mad_metrics = self.mean_absolute_difference(results[4], results[5])
+        # Todo 找到输出计算结果的地方，将MAD结果输出
+        # 将mad_metrics取平均值，将所有结果放入metrics中，名字叫mad。
         return metrics
 
     @staticmethod
@@ -285,3 +290,14 @@ class IoUMetric(BaseMetric):
                 for metric, metric_value in ret_metrics.items()
             })
         return ret_metrics
+
+    def pred_gt_boundary(self, pred_label, label, num_classes, ignore_index):
+        # 循环遍历pred_label和gt_label，找出每一列label数值发生变化的横坐标。
+        # 存储在对应num_classes的数列中，如果是ignore_index就不存储。
+        # 分别返回pred和gt的列表
+        return 0
+
+    def mean_absolute_difference(self, pred_boundary, gt_boundary):
+        # 每组边界的512个差值取绝对值，再取平均值
+        # 返回num_classes-1/num_classes个计算结果
+        return 0
