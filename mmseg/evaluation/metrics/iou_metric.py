@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import os.path as osp
 from collections import OrderedDict
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence, Type
 
 import numpy as np
 import torch
@@ -82,13 +82,17 @@ class IoUMetric(BaseMetric):
             if not self.format_only:
                 label = data_sample['gt_sem_seg']['data'].squeeze().to(
                     pred_label)
-                self.results.append(
-                    self.intersect_and_union(pred_label, label, num_classes,
-                                             self.ignore_index))
+                # self.results.append(
+                #     self.intersect_and_union(pred_label, label, num_classes,
+                #                              self.ignore_index))
                 # 获取预测标签和真实标签边界
-                self.results.append(
-                    self.pred_gt_boundary(pred_label, label, num_classes, self.ignore_index)
-                )
+                # self.results.append(
+                #     self.pred_gt_boundary(pred_label, label, num_classes, self.ignore_index)
+                # )
+                a, b, c, d = self.intersect_and_union(pred_label, label, num_classes, self.ignore_index)
+                pred_b, gt_b = self.pred_gt_boundary(pred_label, label, num_classes, self.ignore_index)
+                list1 = (a, b, c, d, pred_b, gt_b)
+                self.results.append(tuple(list1))
             # format_result
             if self.output_dir is not None:
                 basename = osp.splitext(osp.basename(
@@ -300,27 +304,36 @@ class IoUMetric(BaseMetric):
         return pred_boundary, gt_boundary
 
     @staticmethod
-    def get_boundary(label, num_classes, ignore_index):
+    def get_boundary(label: Tensor, num_classes, ignore_index):
         target = 0
         # 创建形状为（9，512）的ndarray
         res = np.zeros((num_classes, label.size()[1]))
         # 默认tensor与原图方向一致，遍历tensor每一列
-        for i in range(label.size()[1]):
-            for j in range(label.size()[0]):
-                if label[j][i] != target:
-                    target = label[j][i]
+        raw_data = label.cpu().numpy()
+        for i in range(raw_data.shape[1]):
+            for j in range(raw_data.shape[0]):
+                if raw_data[j][i] != target:
+                    target = raw_data[j][i]
                     # 存储在对应num_classes的数列中，如果是ignore_index就不存储。
-                    if target != ignore_index:
+                    if res[target - 1][i] == 0:
                         res[target - 1][i] = j
         boundary = torch.tensor(res)
         return boundary
 
     @staticmethod
     def mean_absolute_difference(pred_boundary: Tensor, gt_boundary: Tensor):
-        # 每组边界的512个差值,取绝对值再平均值
-        mad_sub = torch.sub(pred_boundary, gt_boundary)
-        mad_abs = torch.mean(torch.abs(mad_sub), dim=1)
-        mad_mean = torch.mean(mad_abs)
-        mad = torch.cat((mad_abs, mad_mean))
+
+        assert len(pred_boundary) == len(gt_boundary)
+        mad_list = []
+        # for循环计算所有图片的mad
+        for pred, gt in zip(pred_boundary, gt_boundary):
+            # 每组边界的512个差值,取绝对值再平均值
+            mad_sub = torch.sub(pred[:8], gt[:8])
+            mad_abs = torch.mean(torch.abs(mad_sub), dim=1)
+            mad_mean = torch.mean(mad_abs).unsqueeze(-1)
+            mad_res = torch.cat((mad_abs, mad_mean))
+            mad_list.append(mad_res)
+        # sum 所有mad求一个平均
+        mad = sum(mad_list) / len(pred_boundary)
         # 返回num_classes-1/num_classes个计算结果
         return mad
