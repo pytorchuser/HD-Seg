@@ -8,12 +8,12 @@ import mmcv
 import numpy as np
 from mmengine.utils import mkdir_or_exist
 
-# ORG = './data/Duke_OCT_dataset2015_BOE_Chiu/cropped/images/validation'
-ORG = '../output/test/Duke_OCT_dataset2015_BOE_Chiu/validation'
-MASK = '../output/test/Duke_OCT_dataset2015_BOE_Chiu/results'
+ORG = '../../data/Duke_OCT_dataset2015_BOE_Chiu/cropped/images/validation'
+# ORG = '../output/test/Duke_OCT_dataset2015_BOE_Chiu/validation'
+MASK = '../output/test/Ablation Study/87.63(STR-Net)T_88_3lr_check_srpth_famsar_bafe_dice3&ce1_LS10_duke2015crop512_epoch50_1x/result'
 OUT_DIR = MASK+'_boundary'
 PALETTE = [[62, 51, 173], [42, 175, 242], [109, 111, 52], [10, 45, 255], [142, 204, 90],
-           [189, 133, 26], [10, 83, 252], [204, 40, 58]]
+           [189, 133, 26], [10, 83, 252], [0, 0, 0], [204, 40, 58]]
 
 
 def parse_args():
@@ -52,17 +52,19 @@ def main():
         mask_layer, _, _ = cv2.split(mask_img)
 
         # 遍历结果图中需要修改的坐标，在原图上直接绘制
-        target = 0
         for i in range(mask_layer.shape[1]):
+            target = 0
             for j in range(mask_layer.shape[0]):
                 if mask_layer[j][i] != target and mask_layer[j][i] != 0:
+                    if target == len(palette):
+                        red[j-1][i] = palette[target - 1][0]
+                        green[j-1][i] = palette[target - 1][1]
+                        blue[j-1][i] = palette[target - 1][2]
                     target = mask_layer[j][i]
-                    if target > len(palette):
-                        continue
                     red[j][i] = palette[target - 1][0]
                     green[j][i] = palette[target - 1][1]
                     blue[j][i] = palette[target - 1][2]
-                    print('filename='+filename, i, j, target)
+                    # print('filename='+filename, i, j, target)
         dst_img = np.array([red, green, blue], dtype=np.uint8)
         dst_img = dst_img.transpose((1, 2, 0))
         mmcv.imwrite(dst_img, osp.join(out_dir, osp.splitext(filename)[0] + '.png'))
