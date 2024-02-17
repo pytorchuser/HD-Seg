@@ -90,6 +90,7 @@ class IoUMetric(BaseMetric):
                 #     self.pred_gt_boundary(pred_label, label, num_classes, self.ignore_index)
                 # )
                 a, b, c, d = self.intersect_and_union(pred_label, label, num_classes, self.ignore_index)
+                # 获取预测标签和真实标签边界
                 pred_b, gt_b = self.pred_gt_boundary(pred_label, label, num_classes, self.ignore_index)
                 list1 = (a, b, c, d, pred_b, gt_b)
                 self.results.append(tuple(list1))
@@ -169,6 +170,8 @@ class IoUMetric(BaseMetric):
         # results[4]和[5]存储边界值，写一个方法实现MAD计算：
         mad_metrics = self.mean_absolute_difference(results[4], results[5])
         metrics['mad'] = mad_metrics
+        # results[4]和[5]存储边界值，写一个方法实现层厚度计算：
+        metrics['thick_pred'], metrics['thick_gt'] = self.metrics_layer_thickness(results[4], results[5])
         return metrics
 
     @staticmethod
@@ -337,3 +340,35 @@ class IoUMetric(BaseMetric):
         mad = sum(mad_list) / len(pred_boundary)
         # 返回num_classes-1/num_classes个计算结果
         return mad
+
+    def metrics_layer_thickness(self, pred_boundary: Tensor, gt_boundary: Tensor):
+
+        assert len(pred_boundary) == len(gt_boundary)
+        pred_thick_list = []
+        gt_thick_list = []
+        # for循环计算所有图片的层厚度
+        for pred, gt in zip(pred_boundary, gt_boundary):
+            # 512列中的每层，相邻相减，得到8层数据，求绝对值
+            # 再将每层512个数据求平均
+            pred_thick_list.append(self.get_thickness(pred))
+            gt_thick_list.append(self.get_thickness(gt))
+        mean_pred_thick = sum(pred_thick_list) / len(pred_boundary)
+        mean_gt_thick = sum(gt_thick_list) / len(gt_boundary)
+        # 返回num_classes-1/num_classes个计算结果
+        return mean_pred_thick, mean_gt_thick
+
+    @staticmethod
+    def get_thickness(boundary):
+        thick_list = []
+        # b_data = boundary.detach().cpu().numpy()
+        for i in range(boundary.shape[0]):
+            if i < boundary.shape[0] - 3:
+                thick_sub = torch.sub(boundary[i + 1], boundary[i])
+                thick_abs = torch.abs(thick_sub)
+                thick_mean = torch.mean(thick_abs).unsqueeze(-1)
+                if i == 0:
+                    thick_list = thick_mean
+                else:
+                    thick_list = torch.cat((thick_list, thick_mean))
+                # thick_list.append(thick_mean)
+        return thick_list
