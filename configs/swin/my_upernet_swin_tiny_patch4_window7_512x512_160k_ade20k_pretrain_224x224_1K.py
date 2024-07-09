@@ -1,10 +1,10 @@
 _base_ = [
-    '../_base_/models/upernet_custom_swin.py', '../_base_/datasets/oct_duke2015.py',
+    '../_base_/models/upernet_custom_swin.py', '../_base_/datasets/oct_hcms2018.py',
     '../_base_/default_runtime.py', '../_base_/schedules/schedule_epoch.py'
 ]
 # load_from = '../pth/upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210531_112542-e380ad3e.pth'  # noqa
 # load_from = '../pth/swin&res_best_mDice_epoch_68_joint.pth'  # noqa
-NUM_CLASSES = 10
+NUM_CLASSES = 9
 
 data_preprocessor = dict(size=(512, 512))
 

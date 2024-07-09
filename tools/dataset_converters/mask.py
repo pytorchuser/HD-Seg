@@ -9,11 +9,15 @@ import numpy as np
 from mmengine.utils import mkdir_or_exist
 
 
-ORG_MASK = '../output/test/87.37(Swin©Res50)T_88_3lr_check_srpth_concat_dice3&ce1_0.2bg_LS10_duke2015crop512_epoch50_1x/result'
+ORG_MASK = '../output/test/T_88_3lr_check_srpth_famsar_bafe_dice3&ce1_0.5bg_LS10_hcms2018crop512_epoch50_1x/result'
 OUT_DIR = ORG_MASK+'_mask'
-PALETTE = [[0, 0, 0], [62, 51, 173], [42, 175, 242], [109, 111, 52], [10, 45, 255], [142, 204, 90],
-           [189, 133, 26], [10, 83, 252], [0, 0, 0], [204, 40, 58]]
+# duke2015
+# PALETTE = [[0, 0, 0], [62, 51, 173], [42, 175, 242], [109, 111, 52], [10, 45, 255], [142, 204, 90],
+#            [189, 133, 26], [10, 83, 252], [0, 0, 0], [204, 40, 58]]
 
+#hcms2018
+PALETTE = [[0, 0, 0], [62, 51, 173], [42, 175, 242], [109, 111, 52], [10, 45, 255], [142, 204, 90],
+           [189, 133, 26], [10, 83, 252], [204, 40, 58]]
 
 def parse_args():
     parser = argparse.ArgumentParser(

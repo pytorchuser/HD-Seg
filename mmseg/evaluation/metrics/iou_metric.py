@@ -362,7 +362,7 @@ class IoUMetric(BaseMetric):
         thick_list = []
         # b_data = boundary.detach().cpu().numpy()
         for i in range(boundary.shape[0]):
-            if i < boundary.shape[0] - 3:
+            if i < boundary.shape[0] - 1:
                 thick_sub = torch.sub(boundary[i + 1], boundary[i])
                 thick_abs = torch.abs(thick_sub)
                 thick_mean = torch.mean(thick_abs).unsqueeze(-1)

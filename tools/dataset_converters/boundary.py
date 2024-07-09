@@ -7,14 +7,20 @@ import cv2
 import mmcv
 import numpy as np
 from mmengine.utils import mkdir_or_exist
+#duke2015
+# ORG = '../../data/Duke_OCT_dataset2015_BOE_Chiu/cropped/images/validation'
 
-ORG = '../../data/Duke_OCT_dataset2015_BOE_Chiu/cropped/images/validation'
-# ORG = '../output/test/Duke_OCT_dataset2015_BOE_Chiu/validation'
-MASK = '../output/test/Ablation Study/87.63(STR-Net)T_88_3lr_check_srpth_famsar_bafe_dice3&ce1_LS10_duke2015crop512_epoch50_1x/result'
+#hcms2018
+ORG = '../../data/OCT_Manual_Delineations-2018_June_29(HCMS)/pad/images/validation'
+MASK = '../output/test/T_88_3lr_check_srpth_famsar_bafe_dice3&ce1_0.5bg_LS10_hcms2018crop512_epoch50_1x/result'
 OUT_DIR = MASK+'_boundary'
-PALETTE = [[62, 51, 173], [42, 175, 242], [109, 111, 52], [10, 45, 255], [142, 204, 90],
-           [189, 133, 26], [10, 83, 252], [0, 0, 0], [204, 40, 58]]
+#duke2015
+# PALETTE = [[62, 51, 173], [42, 175, 242], [109, 111, 52], [10, 45, 255], [142, 204, 90],
+#            [189, 133, 26], [10, 83, 252], [0, 0, 0], [204, 40, 58]]
 
+#hcms2018
+PALETTE = [[62, 51, 173], [42, 175, 242], [109, 111, 52], [10, 45, 255], [142, 204, 90],
+           [189, 133, 26], [10, 83, 252], [204, 40, 58]]
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -56,10 +62,12 @@ def main():
             target = 0
             for j in range(mask_layer.shape[0]):
                 if mask_layer[j][i] != target and mask_layer[j][i] != 0:
-                    if target == len(palette):
-                        red[j-1][i] = palette[target - 1][0]
-                        green[j-1][i] = palette[target - 1][1]
-                        blue[j-1][i] = palette[target - 1][2]
+                    # if target == len(palette):
+                    #     red[j-1][i] = palette[target - 1][0]
+                    #     green[j-1][i] = palette[target - 1][1]
+                    #     blue[j-1][i] = palette[target - 1][2]
+                    if target > mask_layer[j][i] and target != len(palette):
+                        continue
                     target = mask_layer[j][i]
                     red[j][i] = palette[target - 1][0]
                     green[j][i] = palette[target - 1][1]
